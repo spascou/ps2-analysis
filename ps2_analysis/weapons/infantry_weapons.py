@@ -9,10 +9,10 @@ from ps2_census.enums import (
     PlayerState,
     ProjectileFlightType,
 )
+from slugify import slugify
 
 from ps2_analysis.data_file import DataFile, load_data_file
 from ps2_analysis.utils import get, optget
-from slugify import slugify
 
 from .classes.ammo import Ammo
 from .classes.cone_of_fire import ConeOfFire
@@ -88,6 +88,7 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                 item_id=item_id,
                 weapon_id=get(w, "weapon_id", int),
                 name=d["name"]["en"],
+                description=d["description"]["en"],
                 slug=slugify(d["name"]["en"]),
                 image_path=d["image_path"],
                 faction=Faction(optget(d, "faction_id", int, 0)),
@@ -166,6 +167,7 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                     fire_mode: FireMode = FireMode(
                         # Basic information
                         type=FireModeType(get(fm, "fire_mode_type_id", int)),
+                        description=fm["description"]["en"],
                         is_ads=optget(fm, "iron_sights", lambda x: int(x) == 1, False),
                         detect_range=get(fm, "fire_detect_range", int),
                         # Movement modifiers

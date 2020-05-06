@@ -18,6 +18,7 @@ srandom = random.SystemRandom()
 class FireMode:
     # Basic information
     type: FireModeType
+    description: str
     is_ads: bool
     detect_range: int
 
@@ -64,6 +65,7 @@ class FireMode:
         self,
         # Basic information
         type: FireModeType,
+        description: str,
         is_ads: bool,
         detect_range: int,
         # Movement modifiers
@@ -100,6 +102,7 @@ class FireMode:
 
         # Basic information
         self.type = type
+        self.description = description
         self.is_ads = is_ads
         self.detect_range = detect_range
 

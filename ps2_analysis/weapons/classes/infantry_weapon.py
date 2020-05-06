@@ -10,6 +10,7 @@ class InfantryWeapon:
     item_id: int
     weapon_id: int
     name: str
+    description: str
     slug: str
     image_path: str
     faction: Faction
@@ -35,6 +36,7 @@ class InfantryWeapon:
         item_id: int,
         weapon_id: int,
         name: str,
+        description: str,
         slug: str,
         image_path: str,
         faction: Faction,
@@ -53,6 +55,7 @@ class InfantryWeapon:
         self.item_id = item_id
         self.weapon_id = weapon_id
         self.name = name
+        self.description = description
         self.slug = slug
         self.image_path = image_path
         self.faction = faction
