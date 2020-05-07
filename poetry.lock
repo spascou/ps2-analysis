@@ -439,7 +439,7 @@ description = "Daybreak Games Census API client for Planetside 2 (UNOFFICIAL)"
 name = "ps2-census"
 optional = false
 python-versions = ">=3.8,<4.0"
-version = "0.10.3"
+version = "0.10.4"
 
 [package.dependencies]
 requests = ">=2.23,<3.0"
@@ -970,8 +970,8 @@ prompt-toolkit = [
     {file = "prompt_toolkit-3.0.5.tar.gz", hash = "sha256:563d1a4140b63ff9dd587bda9557cffb2fe73650205ab6f4383092fb882e7dc8"},
 ]
 ps2-census = [
-    {file = "ps2_census-0.10.3-py3-none-any.whl", hash = "sha256:51dc27dec38bc544a287da14b76a69ce9564121633c80e74fe549022be746084"},
-    {file = "ps2_census-0.10.3.tar.gz", hash = "sha256:393b18ab1ac1038fc1a2ac753b251166d275668c43a880c78bf2111cba4f9465"},
+    {file = "ps2_census-0.10.4-py3-none-any.whl", hash = "sha256:f5ee90c7ff17a47755e91227c3ed9152af128f465f8e0ee923262d31cc7015e3"},
+    {file = "ps2_census-0.10.4.tar.gz", hash = "sha256:228621e0883ff9e4fd831248357decf51f639cc48a97a068931e9e686d104eb9"},
 ]
 ptyprocess = [
     {file = "ptyprocess-0.6.0-py2.py3-none-any.whl", hash = "sha256:d7cc528d76e76342423ca640335bd3633420dc1366f258cb31d05e865ef5ca1f"},
