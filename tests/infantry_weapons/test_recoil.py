@@ -1,4 +1,4 @@
-from ps2_analysis.weapons.classes.recoil import Recoil
+from ps2_analysis.infantry_weapons.recoil import Recoil
 
 
 def test_half_horizontal_tolerance():

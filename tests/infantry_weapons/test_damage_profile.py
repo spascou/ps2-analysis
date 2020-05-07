@@ -1,4 +1,4 @@
-from ps2_analysis.weapons.classes.damage_profile import DamageLocation, DamageProfile
+from ps2_analysis.infantry_weapons.damage_profile import DamageLocation, DamageProfile
 
 
 def test_damage_delta():

@@ -1,23 +1,45 @@
 import json
 import os
 from enum import Enum
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
 import ndjson
 from ps2_census import Query
+from ps2_census.enums import ItemCategory, ItemType
 
-from .weapons.queries import full_weapons_query_factory
+from .infantry_weapons.queries import infantry_weapons_query_factory
 
 
 class DataFile(str, Enum):
-    WEAPONS = f"weapons.ndjson"
+    INFANTRY_WEAPONS = "infantry-weapons.ndjson"
 
 
 DATA_FILE_QUERY_FACTORY: Dict[DataFile, Callable[[], Query]] = {
-    DataFile.WEAPONS: full_weapons_query_factory
+    DataFile.INFANTRY_WEAPONS: infantry_weapons_query_factory
 }
 
-DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {DataFile.WEAPONS: 15}
+DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {DataFile.INFANTRY_WEAPONS: 10}
+
+DATA_FILE_ITEM_CATEGORIES: Dict[DataFile, Set[ItemCategory]] = {
+    DataFile.INFANTRY_WEAPONS: {
+        ItemCategory.PISTOL,
+        ItemCategory.SHOTGUN,
+        ItemCategory.SMG,
+        ItemCategory.LMG,
+        ItemCategory.ASSAULT_RIFLE,
+        ItemCategory.CARBINE,
+        ItemCategory.SNIPER_RIFLE,
+        ItemCategory.SCOUT_RIFLE,
+        ItemCategory.HEAVY_WEAPON,
+        ItemCategory.BATTLE_RIFLE,
+        ItemCategory.CROSSBOW,
+        ItemCategory.HYBRID_RIFLE,
+    }
+}
+
+DATA_FILE_ITEM_TYPE: Dict[DataFile, ItemType] = {
+    DataFile.INFANTRY_WEAPONS: ItemType.WEAPON
+}
 
 
 def update_all_data_files(
@@ -40,46 +62,56 @@ def update_data_file(
 ):
     query_factory: Callable[[], Query] = DATA_FILE_QUERY_FACTORY[data_file]
     query_batch_size: int = DATA_FILE_QUERY_BATCH_SIZE[data_file]
+    item_type: ItemType = DATA_FILE_ITEM_TYPE[data_file]
+    item_categories: Set[ItemCategory] = DATA_FILE_ITEM_CATEGORIES[data_file]
 
     filepath: str = "/".join((directory, data_file.value))
     print(f"Updating {filepath}")
 
     if os.path.exists(filepath):
         if force_update is True:
-            print(f"Removing previous file")
+            print("Removing previous file")
             os.remove(filepath)
         else:
             print("File already exists")
             return
 
     total_items: int = 0
-    previously_returned: Optional[int] = None
 
     with open(filepath, "a") as f:
-        i: int = 1
-        while previously_returned is None or previously_returned > 0:
-            query: Query = query_factory().set_service_id(service_id).start(i).limit(
-                query_batch_size
-            )
-            result: dict = query.get()
 
-            try:
-                returned: int = result["returned"]
-            except KeyError:
-                print(result)
-                raise
+        item_category: ItemCategory
+        for item_category in item_categories:
+            print(f"For category {item_category.name}")
 
-            local: int = 0
-            for item in result["item_list"]:
-                local += 1
-                f.write(f"{json.dumps(item)}\n")
+            previously_returned: Optional[int] = None
 
-            total_items += local
-            i += query_batch_size
+            i: int = 1
+            while previously_returned is None or previously_returned > 0:
+                query: Query = query_factory().set_service_id(service_id).filter(
+                    "item_type_id", item_type.value
+                ).filter("item_category_id", item_category.value).start(i).limit(
+                    query_batch_size
+                )
+                result: dict = query.get()
 
-            print(f"Got {local} items, total {total_items}")
+                try:
+                    returned: int = result["returned"]
+                except KeyError:
+                    print(result)
+                    raise
 
-            previously_returned = returned
+                local: int = 0
+                for item in result["item_list"]:
+                    local += 1
+                    f.write(f"{json.dumps(item)}\n")
+
+                total_items += local
+                i += query_batch_size
+
+                print(f"Got {local} items, total {total_items}")
+
+                previously_returned = returned
 
     print(f"Saved {total_items} items")
 

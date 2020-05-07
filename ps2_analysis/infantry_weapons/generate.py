@@ -1,11 +1,10 @@
 import json
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, FrozenSet, List, Optional
 
 from ps2_census.enums import (
     Faction,
     FireModeType,
     ItemCategory,
-    ItemType,
     PlayerState,
     ProjectileFlightType,
 )
@@ -14,61 +13,48 @@ from slugify import slugify
 from ps2_analysis.data_file import DataFile, load_data_file
 from ps2_analysis.utils import get, optget
 
-from .classes.ammo import Ammo
-from .classes.cone_of_fire import ConeOfFire
-from .classes.damage_profile import DamageLocation, DamageProfile
-from .classes.fire_group import FireGroup
-from .classes.fire_mode import FireMode
-from .classes.fire_timing import FireTiming
-from .classes.heat import Heat
-from .classes.infantry_weapon import InfantryWeapon
-from .classes.projectile import Projectile
-from .classes.recoil import Recoil
+from .ammo import Ammo
+from .attachment import Attachment
+from .cone_of_fire import ConeOfFire
+from .damage_profile import DamageLocation, DamageProfile
 from .data_fixers import INFANTRY_WEAPONS_DATA_FIXERS
+from .fire_group import FireGroup
+from .fire_mode import FireMode
+from .fire_timing import FireTiming
+from .heat import Heat
+from .infantry_weapon import InfantryWeapon
+from .projectile import Projectile
+from .recoil import Recoil
+
+EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
+    (6006332, 6008686, 6004198)  # NS-03 Thumper  # Grenade printer  # Mystery Weapon
+)
 
 
 def generate_infantry_weapons(data_files_directory: str) -> List[InfantryWeapon]:
-    print(f"Generating infantry weapon objects")
+    print("Generating infantry weapon objects")
 
     raw: List[dict] = load_data_file(
-        data_file=DataFile.WEAPONS, directory=data_files_directory
+        data_file=DataFile.INFANTRY_WEAPONS, directory=data_files_directory
     )
 
-    filtered: Iterator[dict] = _filter_infantry_weapons(raw)
+    filtered: List[dict] = filter_infantry_weapons(raw)
 
-    weapons: List[InfantryWeapon] = _parse_infantry_weapons_data(filtered)
+    weapons: List[InfantryWeapon] = parse_infantry_weapons_data(filtered)
     print(f"Generated {len(weapons)} infantry weapon objects")
 
     return weapons
 
 
-def _filter_infantry_weapons(data: List[dict]) -> Iterator[dict]:
-    return filter(
-        lambda x: (
-            ItemType(int(x["item_type_id"])) == ItemType.WEAPON
-            and ItemCategory(int(x["item_category_id"]))
-            in {
-                ItemCategory.KNIFE,
-                ItemCategory.PISTOL,
-                ItemCategory.SHOTGUN,
-                ItemCategory.SMG,
-                ItemCategory.LMG,
-                ItemCategory.ASSAULT_RIFLE,
-                ItemCategory.CARBINE,
-                ItemCategory.SNIPER_RIFLE,
-                ItemCategory.SCOUT_RIFLE,
-                ItemCategory.HEAVY_WEAPON,
-                ItemCategory.BATTLE_RIFLE,
-                ItemCategory.CROSSBOW,
-                ItemCategory.HYBRID_RIFLE,
-            }
-            and int(x["item_id"]) != 6006332  # NS-03 Thumper
-        ),
-        data,
+def filter_infantry_weapons(data: List[dict]) -> List[dict]:
+    ifw: List[dict] = list(
+        filter(lambda x: (int(x["item_id"]) not in EXCLUDED_ITEM_IDS), data)
     )
 
+    return ifw
 
-def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
+
+def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
     infantry_weapons: List[InfantryWeapon] = []
 
     d: dict
@@ -80,7 +66,11 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
 
         try:
             w: dict = d["item_to_weapon"]["weapon"]
-            w_d: dict = d["weapon_datasheet"]
+            w_d: Optional[dict] = d.get("weapon_datasheet")
+
+            if w_d is None:
+                print(f"{d['name']['en']} ({d['item_id']}) IS FUCKED")
+                continue
 
             # Infantry weapons
             infantry_weapon: InfantryWeapon = InfantryWeapon(
@@ -90,7 +80,7 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                 name=d["name"]["en"],
                 description=d["description"]["en"],
                 slug=slugify(d["name"]["en"]),
-                image_path=d["image_path"],
+                image_path=d.get("image_path"),
                 faction=Faction(optget(d, "faction_id", int, 0)),
                 category=ItemCategory(get(d, "item_category_id", int)),
                 # Movement modifiers
@@ -112,9 +102,11 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
             ):
                 fg: dict = _fg["fire_group"]
 
-                # Fire modes
-                hip_fire_mode: Optional[FireMode] = None
-                ads_fire_mode: Optional[FireMode] = None
+                fire_group: FireGroup = FireGroup(
+                    # General information
+                    index=optget(fg, "fire_group_index", int, 0),
+                    transition_time=optget(fg, "transition_duration_ms", int, 0),
+                )
 
                 _fm: dict
                 for _fm in sorted(
@@ -169,7 +161,7 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                         type=FireModeType(get(fm, "fire_mode_type_id", int)),
                         description=fm["description"]["en"],
                         is_ads=optget(fm, "iron_sights", lambda x: int(x) == 1, False),
-                        detect_range=get(fm, "fire_detect_range", int),
+                        detect_range=optget(fm, "fire_detect_range", int, 0),
                         # Movement modifiers
                         turn_multiplier=get(fm, "turn_modifier", float),
                         move_multiplier=get(fm, "move_modifier", float),
@@ -177,17 +169,19 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                         direct_damage_profile=DamageProfile(
                             # Base damage
                             max_damage=get(fm, "max_damage", int),
-                            max_damage_range=get(fm, "max_damage_range", int),
-                            min_damage=get(fm, "min_damage", int),
+                            max_damage_range=optget(fm, "max_damage_range", int, 0),
+                            min_damage=optget(
+                                fm, "min_damage", int, get(fm, "max_damage", int)
+                            ),
                             min_damage_range=get(fm, "min_damage_range", int),
                             # Pellets
                             pellets_count=get(fm, "fire_pellets_per_shot", int),
                             # Locational modifiers
                             location_multiplier={
                                 DamageLocation.HEAD: 1.0
-                                + get(fm, "damage_head_multiplier", float),
+                                + optget(fm, "damage_head_multiplier", float, 0.0),
                                 DamageLocation.LEGS: 1.0
-                                + get(fm, "damage_legs_multiplier", float),
+                                + optget(fm, "damage_legs_multiplier", float, 0.0),
                             },
                         ),
                         indirect_damage_profile=(
@@ -227,7 +221,9 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                                 ),
                                 # Reload
                                 short_reload_time=get(fm, "reload_time_ms", int),
-                                reload_chamber_time=get(fm, "reload_chamber_ms", int),
+                                reload_chamber_time=optget(
+                                    fm, "reload_chamber_ms", int, 0
+                                ),
                                 loop_start_time=optget(fm, "reload_loop_start_ms", int),
                                 loop_end_time=optget(fm, "reload_loop_end_ms", int),
                                 # Chamber
@@ -247,10 +243,12 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                                 total_capacity=get(w, "heat_capacity", int),
                                 heat_per_shot=get(fm, "heat_per_shot", int),
                                 # Heat management
-                                overheat_penalty_time=get(
-                                    w, "heat_overheat_penalty_ms", int
+                                overheat_penalty_time=optget(
+                                    w, "heat_overheat_penalty_ms", int, 0
                                 ),
-                                recovery_delay=get(fm, "heat_recovery_delay_ms", int),
+                                recovery_delay=optget(
+                                    fm, "heat_recovery_delay_ms", int, 0
+                                ),
                                 recovery_rate=get(w, "heat_bleed_off_rate", int),
                                 threshold=get(fm, "heat_threshold", int),
                             )
@@ -348,67 +346,43 @@ def _parse_infantry_weapons_data(data: Iterator[dict]) -> List[InfantryWeapon]:
                         player_state_can_ads=player_state_can_ads,
                     )
 
-                    if fire_mode.is_ads is True:
-                        if ads_fire_mode is None:
-                            ads_fire_mode = fire_mode
-                        else:
-                            raise ValueError("Multiple ADS fire modes")
-                    else:
-                        if hip_fire_mode is None:
-                            hip_fire_mode = fire_mode
-                        else:
-                            raise ValueError("Multiple hip fire modes")
-
-                assert ads_fire_mode is not None
-                assert hip_fire_mode is not None
-
-                fire_group: FireGroup = FireGroup(
-                    # General information
-                    index=optget(fg, "fire_group_index", int, 0),
-                    transition_time=optget(fg, "transition_duration_ms", int, 0),
-                    # Fire modes
-                    ads_fire_mode=ads_fire_mode,
-                    hip_fire_mode=hip_fire_mode,
-                )
+                    fire_group.fire_modes.append(fire_mode)
 
                 infantry_weapon.fire_groups.append(fire_group)
 
             infantry_weapons.append(infantry_weapon)
 
-            # TODO: Attachments
-            # _at: dict
-            # for _at in sorted(
-            #     d["item_attachments"], key=lambda x: getint(x, "attachment_item_id"),
-            # ):
-            #     at: dict = _at["item"]
+            _at: dict
+            for _at in sorted(
+                d.get("item_attachments", []),
+                key=lambda x: get(x, "attachment_item_id", int),
+            ):
+                at: dict = _at["item"]
 
-            #     p_at: dict = {}
+                attachment: Attachment = Attachment(
+                    item_id=get(at, "item_id", int),
+                    name=at["name"]["en"],
+                    description=at.get("description", {"en": None})["en"],
+                    image_path=at.get("image_path"),
+                    is_default=get(at, "is_default_attachment", int) == 1,
+                )
 
-            #     # Metadata
-            #     p_at["name"] = at["name"]["en"]
-            #     p_at["image_path"] = at["image_path"]
-            #     p_at["is_default_attachment"] = getflag(at, "is_default_attachment")
+                for zef in at.get("zone_effects", []):
+                    p_zef: dict = {}
 
-            #     # Effects
-            #     p_at["effects"] = []
+                    # Effect Type
+                    eft: dict = zef["zone_effect_type"]
 
-            #     ze: dict
-            #     for ze in at.get("zone_effects", []):
-            #         p_ze: dict = {}
+                    p_zef["action"] = eft["description"]
 
-            #         # Effect Types
-            #         ze_t: dict = ze["zone_effect_type"]
+                    for k, v in eft.items():
+                        if k.startswith("string") or k.startswith("param"):
+                            if k in zef:
+                                p_zef[eft[k]] = v
 
-            #         p_ze["action"] = ze_t["description"]
+                    attachment.effects.append(p_zef)
 
-            #         for k, v in ze.items():
-            #             if k.startswith("string") or k.startswith("param"):
-            #                 if k in ze_t:
-            #                     p_ze[ze_t[k]] = v
-
-            #         p_at["effects"].append(p_ze)
-
-            #     p["attachments"].append(p_at)
+                infantry_weapon.attachments.append(attachment)
 
         except (KeyError, ValueError, AssertionError) as e:
             print(json.dumps(d, sort_keys=True, indent=2))

@@ -12,11 +12,13 @@ if not SERVICE_ID:
     raise ValueError("CENSUS_SERVICE_ID envvar not found")
 
 update_data_file(
-    data_file=DataFile.WEAPONS, directory=DATAFILES_DIRECTORY, service_id=SERVICE_ID
+    data_file=DataFile.INFANTRY_WEAPONS,
+    directory=DATAFILES_DIRECTORY,
+    service_id=SERVICE_ID,
 )
 
 data: List[dict] = load_data_file(
-    data_file=DataFile.WEAPONS, directory=DATAFILES_DIRECTORY
+    data_file=DataFile.INFANTRY_WEAPONS, directory=DATAFILES_DIRECTORY
 )
 
 print(

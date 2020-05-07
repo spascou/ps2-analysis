@@ -1,4 +1,4 @@
-from ps2_analysis.weapons.classes.ammo import Ammo
+from ps2_analysis.infantry_weapons.ammo import Ammo
 
 
 def test_shots_per_clip():

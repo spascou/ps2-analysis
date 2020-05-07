@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Optional
 
 from ps2_census.enums import Faction, ItemCategory
 
+from .attachment import Attachment
 from .fire_group import FireGroup
 
 
@@ -12,7 +13,7 @@ class InfantryWeapon:
     name: str
     description: str
     slug: str
-    image_path: str
+    image_path: Optional[str]
     faction: Faction
     category: ItemCategory
 
@@ -30,6 +31,9 @@ class InfantryWeapon:
     # Fire groups
     fire_groups: List[FireGroup]
 
+    # Attachments
+    attachments: List[Attachment]
+
     def __init__(
         self,
         # Basic information
@@ -38,7 +42,7 @@ class InfantryWeapon:
         name: str,
         description: str,
         slug: str,
-        image_path: str,
+        image_path: Optional[str],
         faction: Faction,
         category: ItemCategory,
         # Movement modifiers
@@ -74,3 +78,6 @@ class InfantryWeapon:
 
         # Fire groups
         self.fire_groups = []
+
+        # Attachments
+        self.attachments = []

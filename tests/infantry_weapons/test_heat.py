@@ -1,4 +1,4 @@
-from ps2_analysis.weapons.classes.heat import Heat
+from ps2_analysis.infantry_weapons.heat import Heat
 
 
 def test_shots_before_overheat():

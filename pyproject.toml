@@ -21,7 +21,7 @@ python = "^3.8"
 toml = "^0.9"
 altair = "^4.1"
 ndjson = "^0.3"
-ps2_census = "^0.10"
+ps2_census = "^0.12"
 python_slugify = "^4.0"
 
 [tool.poetry.dev-dependencies]
