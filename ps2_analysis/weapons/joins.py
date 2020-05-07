@@ -58,28 +58,35 @@ fire_mode_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
-fire_mode_to_direct_effect_join_factory: Callable[[], Join] = (
+fire_mode_to_damage_direct_effect_join_factory: Callable[[], Join] = (
     Join(Collection.EFFECT)
+    .outer(0)
     .on("damage_direct_effect_id")
     .to("effect_id")
-    .inject_at("direct_effect")
+    .inject_at("damage_direct_effect")
+    .nest(
+        Join(Collection.EFFECT_TYPE)
+        .outer(0)
+        .on("effect_type_id")
+        .to("effect_type_id")
+        .inject_at("effect_type")
+    )
     .get_factory()
 )
 
-fire_mode_to_indirect_effect_join_factory: Callable[[], Join] = (
+fire_mode_to_damage_indirect_effect_join_factory: Callable[[], Join] = (
     Join(Collection.EFFECT)
+    .outer(0)
     .on("damage_indirect_effect_id")
     .to("effect_id")
-    .inject_at("indirect_effect")
-    .get_factory()
-)
-
-effect_to_effect_type_join_factory: Callable[[], Join] = (
-    Join(Collection.EFFECT_TYPE)
-    .outer(0)
-    .on("effect_type_id")
-    .to("effect_type_id")
-    .inject_at("effect_type")
+    .inject_at("damage_indirect_effect")
+    .nest(
+        Join(Collection.EFFECT_TYPE)
+        .outer(0)
+        .on("effect_type_id")
+        .to("effect_type_id")
+        .inject_at("effect_type")
+    )
     .get_factory()
 )
 

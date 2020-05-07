@@ -17,7 +17,7 @@ DATA_FILE_QUERY_FACTORY: Dict[DataFile, Callable[[], Query]] = {
     DataFile.WEAPONS: full_weapons_query_factory
 }
 
-DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {DataFile.WEAPONS: 20}
+DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {DataFile.WEAPONS: 15}
 
 
 def update_all_data_files(

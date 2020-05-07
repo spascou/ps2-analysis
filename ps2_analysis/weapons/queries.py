@@ -7,6 +7,8 @@ from .joins import (
     fire_group_join_factory,
     fire_group_to_fire_mode_join_factory,
     fire_mode_join_factory,
+    fire_mode_to_damage_direct_effect_join_factory,
+    fire_mode_to_damage_indirect_effect_join_factory,
     fire_mode_to_projectile_join_factory,
     item_attachment_join_factory,
     item_to_weapon_join_factory,
@@ -34,6 +36,36 @@ full_weapons_query_factory: Callable[[], Query] = (
                                 fire_mode_to_projectile_join_factory().nest(
                                     projectile_join_factory()
                                 )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+    .join(
+        item_to_weapon_join_factory().nest(
+            weapon_join_factory().nest(
+                weapon_to_fire_group_join_factory().nest(
+                    fire_group_join_factory().nest(
+                        fire_group_to_fire_mode_join_factory().nest(
+                            fire_mode_join_factory().nest(
+                                fire_mode_to_damage_direct_effect_join_factory()
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+    .join(
+        item_to_weapon_join_factory().nest(
+            weapon_join_factory().nest(
+                weapon_to_fire_group_join_factory().nest(
+                    fire_group_join_factory().nest(
+                        fire_group_to_fire_mode_join_factory().nest(
+                            fire_mode_join_factory().nest(
+                                fire_mode_to_damage_indirect_effect_join_factory()
                             )
                         )
                     )

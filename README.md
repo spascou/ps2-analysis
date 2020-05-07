@@ -26,7 +26,7 @@ pip install ps2-analysis
 ## Examples
 
 Examples are available in the `examples` folder:
-- `discover.py`: updates the infantry weapons datafile and outputs all different (nested) key paths as well as associated set of values encountered within the whole dataset
+- `discover.py`: updates the infantry weapons datafile and outputs all different (nested) key paths as well as associated set of values encountered within the whole dataset; example output in `discover.json`
 - `generate_infantry_weapons.py`: no output; simply an example of `InfantryWeapon` objects generation
 - `fire_simulation_plot.py`: generates a fire simulation plot for the TRAC-5 TR carbine, 100 runs of 10 shots
 - `ttk_to_mhd_plot.py`: generates a plot of time to kill at 15meters to mean horizontal deviation for all SMGs
