@@ -193,7 +193,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                 min_damage_range=int(fm["min_damage_ind_radius"]),
                                 pellets_count=1,
                             )
-                            if "max_indirect_damage" in fm
+                            if "max_damage_ind" in fm
                             else None
                         ),
                         # Zoom
