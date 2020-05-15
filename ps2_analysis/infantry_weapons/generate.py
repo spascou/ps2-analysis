@@ -104,7 +104,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
 
                 fire_group: FireGroup = FireGroup(
                     # General information
-                    index=optget(fg, "fire_group_index", int, 0),
+                    index=optget(_fg, "fire_group_index", int, 0),
                     transition_time=optget(fg, "transition_duration_ms", int, 0),
                 )
 
