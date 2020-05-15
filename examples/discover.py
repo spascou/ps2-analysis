@@ -23,6 +23,8 @@ data: List[dict] = load_data_file(
 
 print(
     json.dumps(
-        {k: list(v) for k, v in discover(data).items()}, sort_keys=True, indent=2
+        {k: sorted(list(v)) for k, v in discover(data).items()},
+        sort_keys=True,
+        indent=2,
     )
 )
