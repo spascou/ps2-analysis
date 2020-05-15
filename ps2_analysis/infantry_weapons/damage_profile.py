@@ -12,9 +12,9 @@ class DamageLocation(str, Enum):
 class DamageProfile:
     # Base damage
     max_damage: int
-    max_damage_range: int
+    max_damage_range: float
     min_damage: int
-    min_damage_range: int
+    min_damage_range: float
 
     # Pellets
     pellets_count: int
@@ -26,9 +26,9 @@ class DamageProfile:
         self,
         # Base damage
         max_damage: int,
-        max_damage_range: int,
+        max_damage_range: float,
         min_damage: int,
-        min_damage_range: int,
+        min_damage_range: float,
         # Pellets
         pellets_count: int,
         # Locational modifiers
@@ -55,11 +55,11 @@ class DamageProfile:
         return self.max_damage - self.min_damage
 
     @property
-    def damage_range_delta(self) -> int:
+    def damage_range_delta(self) -> float:
         return self.min_damage_range - self.max_damage_range
 
     def damage_per_pellet(
-        self, distance: int, location: DamageLocation = DamageLocation.TORSO
+        self, distance: float, location: DamageLocation = DamageLocation.TORSO
     ) -> int:
 
         damage: float

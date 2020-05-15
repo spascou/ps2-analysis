@@ -169,11 +169,11 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         direct_damage_profile=DamageProfile(
                             # Base damage
                             max_damage=get(fm, "max_damage", int),
-                            max_damage_range=optget(fm, "max_damage_range", int, 0),
+                            max_damage_range=optget(fm, "max_damage_range", float, 0.0),
                             min_damage=optget(
                                 fm, "min_damage", int, get(fm, "max_damage", int)
                             ),
-                            min_damage_range=get(fm, "min_damage_range", int),
+                            min_damage_range=get(fm, "min_damage_range", float),
                             # Pellets
                             pellets_count=get(fm, "fire_pellets_per_shot", int),
                             # Locational modifiers
@@ -187,10 +187,14 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         indirect_damage_profile=(
                             DamageProfile(
                                 # Base damage
-                                max_damage=int(fm["max_damage_ind"]),
-                                max_damage_range=int(fm["max_damage_ind_radius"]),
-                                min_damage=int(fm["min_damage_ind"]),
-                                min_damage_range=int(fm["min_damage_ind_radius"]),
+                                max_damage=get(fm, "max_damage_ind", int),
+                                max_damage_range=get(
+                                    fm, "max_damage_ind_radius", float
+                                ),
+                                min_damage=get(fm, "min_damage_ind", int),
+                                min_damage_range=get(
+                                    fm, "min_damage_ind_radius", float
+                                ),
                                 pellets_count=1,
                             )
                             if "max_damage_ind" in fm
