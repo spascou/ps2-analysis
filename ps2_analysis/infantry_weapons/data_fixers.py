@@ -60,6 +60,15 @@ def triumph_flare_gun(data: dict):
     data["weapon_datasheet"] = {"capacity": "22", "clip_size": "2"}
 
 
+def serpent_ve92(data: dict):
+    data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][0]["fire_group"][
+        "fire_group_to_fire_modes"
+    ][1]["fire_mode"]["description"]["en"] = "Auto"
+    data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][1]["fire_group"][
+        "fire_group_to_fire_modes"
+    ][1]["fire_mode"]["description"]["en"] = "Semi-Auto"
+
+
 INFANTRY_WEAPONS_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
     7528: nc05_jackhammer,
     803756: nc05_jackhammer,
@@ -94,4 +103,5 @@ INFANTRY_WEAPONS_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
     803008: triumph_flare_gun,
     803009: triumph_flare_gun,
     6003793: ns_showdown,
+    7214: serpent_ve92,
 }
