@@ -45,3 +45,7 @@ class Projectile:
         # Misc
         self.life_time = life_time
         self.drag = drag
+
+    @property
+    def max_range(self) -> float:
+        return self.speed * (self.life_time / 1_000)
