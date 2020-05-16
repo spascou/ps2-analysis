@@ -54,6 +54,10 @@ class InfantryWeapon:
         from_ads_time: int,
         to_ads_time: int,
         sprint_recovery_time: int,
+        # Fire groups
+        fire_groups: Optional[List[FireGroup]] = None,
+        # Attachments
+        attachments: Optional[List[Attachment]] = None,
     ):
         # Basic information
         self.item_id = item_id
@@ -77,7 +81,7 @@ class InfantryWeapon:
         self.sprint_recovery_time = sprint_recovery_time
 
         # Fire groups
-        self.fire_groups = []
+        self.fire_groups = fire_groups or []
 
         # Attachments
-        self.attachments = []
+        self.attachments = attachments or []

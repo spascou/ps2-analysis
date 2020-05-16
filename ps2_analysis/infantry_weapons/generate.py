@@ -1,5 +1,5 @@
 import json
-from typing import Dict, FrozenSet, List, Optional
+from typing import Dict, FrozenSet, List
 
 from ps2_census.enums import (
     Faction,
@@ -66,35 +66,11 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
 
         try:
             w: dict = d["item_to_weapon"]["weapon"]
-            w_d: Optional[dict] = d.get("weapon_datasheet")
-
-            if w_d is None:
-                print(f"{d['name']['en']} ({d['item_id']}) IS FUCKED")
-                continue
-
-            # Infantry weapons
-            infantry_weapon: InfantryWeapon = InfantryWeapon(
-                # Basic information
-                item_id=item_id,
-                weapon_id=get(w, "weapon_id", int),
-                name=d["name"]["en"],
-                description=d["description"]["en"],
-                slug=slugify(d["name"]["en"]),
-                image_path=d.get("image_path"),
-                faction=Faction(optget(d, "faction_id", int, 0)),
-                category=ItemCategory(get(d, "item_category_id", int)),
-                # Movement modifiers
-                move_multiplier=get(w, "move_modifier", float),
-                turn_multiplier=get(w, "turn_modifier", float),
-                # Handling timings
-                equip_time=get(w, "equip_ms", int),
-                unequip_time=get(w, "unequip_ms", int),
-                from_ads_time=get(w, "from_iron_sights_ms", int),
-                to_ads_time=get(w, "to_iron_sights_ms", int),
-                sprint_recovery_time=get(w, "sprint_recovery_ms", int),
-            )
+            w_d: dict = d["weapon_datasheet"]
 
             # Fire groups
+            fire_groups: List[FireGroup] = []
+
             _fg: dict
             for _fg in sorted(
                 w["weapon_to_fire_groups"],
@@ -102,11 +78,8 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
             ):
                 fg: dict = _fg["fire_group"]
 
-                fire_group: FireGroup = FireGroup(
-                    # General information
-                    index=optget(_fg, "fire_group_index", int, 0),
-                    transition_time=optget(fg, "transition_duration_ms", int, 0),
-                )
+                # Fire modes
+                fire_modes: List[FireMode] = []
 
                 _fm: dict
                 for _fm in sorted(
@@ -195,7 +168,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                 min_damage_range=get(
                                     fm, "min_damage_ind_radius", float
                                 ),
-                                pellets_count=1,
+                                pellets_count=get(fm, "fire_pellets_per_shot", int),
                             )
                             if "max_damage_ind" in fm
                             else None
@@ -263,7 +236,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         fire_timing=FireTiming(
                             # Basic information
                             is_automatic=optget(
-                                fm, "is_automatic", lambda x: int(x) == 1, False
+                                fm, "automatic", lambda x: int(x) == 1, False
                             ),
                             refire_time=get(fm, "fire_refire_ms", int),
                             fire_duration=optget(fm, "fire_duration_ms", int),
@@ -350,11 +323,24 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         player_state_can_ads=player_state_can_ads,
                     )
 
-                    fire_group.fire_modes.append(fire_mode)
+                    fire_modes.append(fire_mode)
 
-                infantry_weapon.fire_groups.append(fire_group)
+                fire_modes_descriptions: List[str] = [f.description for f in fire_modes]
+                assert len(set(fire_modes_descriptions)) == 1
 
-            infantry_weapons.append(infantry_weapon)
+                fire_group: FireGroup = FireGroup(
+                    # General information
+                    index=optget(_fg, "fire_group_index", int, 0),
+                    description=fire_modes_descriptions[0],
+                    transition_time=optget(fg, "transition_duration_ms", int, 0),
+                    # Fire modes
+                    fire_modes=fire_modes,
+                )
+
+                fire_groups.append(fire_group)
+
+            # Attachments
+            attachments: List[Attachment] = []
 
             _at: dict
             for _at in sorted(
@@ -386,7 +372,35 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
 
                     attachment.effects.append(p_zef)
 
-                infantry_weapon.attachments.append(attachment)
+                attachments.append(attachment)
+
+            # Infantry weapons
+            infantry_weapon: InfantryWeapon = InfantryWeapon(
+                # Basic information
+                item_id=item_id,
+                weapon_id=get(w, "weapon_id", int),
+                name=d["name"]["en"],
+                description=d["description"]["en"],
+                slug=slugify(d["name"]["en"]),
+                image_path=d.get("image_path"),
+                faction=Faction(optget(d, "faction_id", int, 0)),
+                category=ItemCategory(get(d, "item_category_id", int)),
+                # Movement modifiers
+                move_multiplier=get(w, "move_modifier", float),
+                turn_multiplier=get(w, "turn_modifier", float),
+                # Handling timings
+                equip_time=get(w, "equip_ms", int),
+                unequip_time=get(w, "unequip_ms", int),
+                from_ads_time=get(w, "from_iron_sights_ms", int),
+                to_ads_time=get(w, "to_iron_sights_ms", int),
+                sprint_recovery_time=get(w, "sprint_recovery_ms", int),
+                # Fire groups
+                fire_groups=fire_groups,
+                # Attachments
+                attachments=attachments,
+            )
+
+            infantry_weapons.append(infantry_weapon)
 
         except (KeyError, ValueError, AssertionError) as e:
             print(json.dumps(d, sort_keys=True, indent=2))
