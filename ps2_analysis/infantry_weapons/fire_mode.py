@@ -20,7 +20,7 @@ class FireMode:
     type: FireModeType
     description: str
     is_ads: bool
-    detect_range: int
+    detect_range: float
 
     # Movement modifiers
     move_multiplier: float
@@ -67,7 +67,7 @@ class FireMode:
         type: FireModeType,
         description: str,
         is_ads: bool,
-        detect_range: int,
+        detect_range: float,
         # Movement modifiers
         move_multiplier: float,
         turn_multiplier: float,

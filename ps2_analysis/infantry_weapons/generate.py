@@ -134,7 +134,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         type=FireModeType(get(fm, "fire_mode_type_id", int)),
                         description=fm["description"]["en"],
                         is_ads=optget(fm, "iron_sights", lambda x: int(x) == 1, False),
-                        detect_range=optget(fm, "fire_detect_range", int, 0),
+                        detect_range=optget(fm, "fire_detect_range", float, 0.0),
                         # Movement modifiers
                         turn_multiplier=get(fm, "turn_modifier", float),
                         move_multiplier=get(fm, "move_modifier", float),
