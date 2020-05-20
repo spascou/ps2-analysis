@@ -368,7 +368,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                     for k, v in eft.items():
                         if k.startswith("string") or k.startswith("param"):
                             if k in zef:
-                                p_zef[eft[k]] = v
+                                p_zef[v] = zef[k]
 
                     attachment.effects.append(p_zef)
 
