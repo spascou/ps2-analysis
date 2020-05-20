@@ -97,10 +97,15 @@ class Recoil:
     @property
     def max_tolerated_horizontal_kicks(self) -> Optional[int]:
         if self.half_horizontal_tolerance:
-            return (
-                int(math.floor(self.half_horizontal_tolerance / self.min_horizontal))
-                + 1
-            )
+            if self.min_horizontal > 0:
+                return (
+                    int(
+                        math.floor(self.half_horizontal_tolerance / self.min_horizontal)
+                    )
+                    + 1
+                )
+            else:
+                return None
         else:
             return None
 
