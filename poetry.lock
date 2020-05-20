@@ -349,7 +349,7 @@ description = "Core utilities for Python packages"
 name = "packaging"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "20.3"
+version = "20.4"
 
 [package.dependencies]
 pyparsing = ">=2.0.2"
@@ -438,7 +438,7 @@ description = "Daybreak Games Census API client for Planetside 2 (UNOFFICIAL)"
 name = "ps2-census"
 optional = false
 python-versions = ">=3.8,<4.0"
-version = "0.12.4"
+version = "0.12.6"
 
 [package.dependencies]
 requests = ">=2.23,<3.0"
@@ -938,8 +938,8 @@ numpy = [
     {file = "numpy-1.18.4.zip", hash = "sha256:bbcc85aaf4cd84ba057decaead058f43191cc0e30d6bc5d44fe336dc3d3f4509"},
 ]
 packaging = [
-    {file = "packaging-20.3-py2.py3-none-any.whl", hash = "sha256:82f77b9bee21c1bafbf35a84905d604d5d1223801d639cf3ed140bd651c08752"},
-    {file = "packaging-20.3.tar.gz", hash = "sha256:3c292b474fda1671ec57d46d739d072bfd495a4f51ad01a055121d81e952b7a3"},
+    {file = "packaging-20.4-py2.py3-none-any.whl", hash = "sha256:998416ba6962ae7fbd6596850b80e17859a5753ba17c32284f67bfff33784181"},
+    {file = "packaging-20.4.tar.gz", hash = "sha256:4357f74f47b9c12db93624a82154e9b120fa8293699949152b22065d556079f8"},
 ]
 pandas = [
     {file = "pandas-1.0.3-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:d234bcf669e8b4d6cbcd99e3ce7a8918414520aeb113e2a81aeb02d0a533d7f7"},
@@ -984,8 +984,8 @@ prompt-toolkit = [
     {file = "prompt_toolkit-3.0.5.tar.gz", hash = "sha256:563d1a4140b63ff9dd587bda9557cffb2fe73650205ab6f4383092fb882e7dc8"},
 ]
 ps2-census = [
-    {file = "ps2_census-0.12.4-py3-none-any.whl", hash = "sha256:d34ce4657c7127ab3f9ce1237c68efba93498a53189d4fd86f3b725d446cf8ea"},
-    {file = "ps2_census-0.12.4.tar.gz", hash = "sha256:365cb61b3019d2a7fc2fc455aa6a02eb51ce368d0d35b7f0c09012f575abc6ef"},
+    {file = "ps2_census-0.12.6-py3-none-any.whl", hash = "sha256:d4ffaee7f5f6f7d86ca066d461fea24b149a94eb1c15b3aaf96f740fbb3e6f1c"},
+    {file = "ps2_census-0.12.6.tar.gz", hash = "sha256:46dc52695c6e590f758212872061ae44aa722c9edcf3130f3fa749f75a468d02"},
 ]
 ptyprocess = [
     {file = "ptyprocess-0.6.0-py2.py3-none-any.whl", hash = "sha256:d7cc528d76e76342423ca640335bd3633420dc1366f258cb31d05e865ef5ca1f"},
