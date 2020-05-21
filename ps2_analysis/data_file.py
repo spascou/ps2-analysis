@@ -22,6 +22,7 @@ DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {DataFile.INFANTRY_WEAPONS: 10
 
 DATA_FILE_ITEM_CATEGORIES: Dict[DataFile, Set[ItemCategory]] = {
     DataFile.INFANTRY_WEAPONS: {
+        ItemCategory.KNIFE,
         ItemCategory.PISTOL,
         ItemCategory.SHOTGUN,
         ItemCategory.SMG,

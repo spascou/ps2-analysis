@@ -1,8 +1,6 @@
 import json
-from typing import Dict, FrozenSet, List
+from typing import Dict, FrozenSet, List, Optional
 
-from ps2_analysis.data_file import DataFile, load_data_file
-from ps2_analysis.utils import get, optget
 from ps2_census.enums import (
     Faction,
     FireModeType,
@@ -11,6 +9,9 @@ from ps2_census.enums import (
     ProjectileFlightType,
 )
 from slugify import slugify
+
+from ps2_analysis.data_file import DataFile, load_data_file
+from ps2_analysis.utils import get, optget
 
 from .ammo import Ammo
 from .attachment import Attachment
@@ -65,7 +66,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
 
         try:
             w: dict = d["item_to_weapon"]["weapon"]
-            w_d: dict = d["weapon_datasheet"]
+            w_d: Optional[dict] = d.get("weapon_datasheet")
 
             # Fire groups
             fire_groups: List[FireGroup] = []
@@ -86,7 +87,12 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                     key=lambda x: get(x, "fire_mode_id", int),
                 ):
                     fm: dict = _fm["fire_mode"]
-                    pr: dict = fm["fire_mode_to_projectile"]["projectile"]
+
+                    fm_to_pr: Optional[dict] = fm.get("fire_mode_to_projectile")
+                    pr: Optional[dict] = None
+
+                    if fm_to_pr is not None:
+                        pr = fm["fire_mode_to_projectile"]["projectile"]
 
                     # Player states
                     player_state_cone_of_fire: Dict[PlayerState, ConeOfFire] = {}
@@ -105,9 +111,9 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                             min_angle=get(ps, "cof_min", float),
                             bloom=get(fm, "cof_recoil", float),
                             # Recovery
-                            recovery_rate=get(ps, "cof_recovery_rate", float),
-                            recovery_delay=get(ps, "cof_recovery_delay_ms", int),
-                            recovery_delay_threshold=get(
+                            recovery_rate=optget(ps, "cof_recovery_rate", float),
+                            recovery_delay=optget(ps, "cof_recovery_delay_ms", int),
+                            recovery_delay_threshold=optget(
                                 ps, "cof_recovery_delay_threshold", int
                             ),
                             # Multipliers
@@ -116,11 +122,11 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                             # Pellet
                             pellet_spread=optget(fm, "cof_pellet_spread", float),
                             # Misc
-                            grow_rate=get(ps, "cof_grow_rate", float),
-                            shots_before_penalty=get(
+                            grow_rate=optget(ps, "cof_grow_rate", float),
+                            shots_before_penalty=optget(
                                 ps, "cof_shots_before_penalty", int
                             ),
-                            turn_penalty=get(ps, "cof_turn_penalty", float),
+                            turn_penalty=optget(ps, "cof_turn_penalty", float),
                             range=get(fm, "cof_range", float),
                         )
 
@@ -210,7 +216,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                     None,
                                 ),
                             )
-                            if optget(w_d, "capacity", int, 0) > 0
+                            if w_d is not None and optget(w_d, "capacity", int, 0) > 0
                             else None
                         ),
                         heat=(
@@ -257,18 +263,18 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         # Recoil
                         recoil=Recoil(
                             # Angle
-                            max_angle=optget(fm, "recoil_angle_max", float, 0.0),
-                            min_angle=optget(fm, "recoil_angle_min", float, 0.0),
+                            max_angle=optget(fm, "recoil_angle_max", float),
+                            min_angle=optget(fm, "recoil_angle_min", float),
                             # Vertical
-                            max_vertical=get(fm, "recoil_magnitude_max", float),
-                            min_vertical=get(fm, "recoil_magnitude_min", float),
+                            max_vertical=optget(fm, "recoil_magnitude_max", float),
+                            min_vertical=optget(fm, "recoil_magnitude_min", float),
                             vertical_increase=optget(fm, "recoil_increase", float, 0.0),
                             vertical_crouched_increase=optget(
                                 fm, "recoil_increase_crouched", float, 0.0
                             ),
                             # Horizontal
-                            max_horizontal=get(fm, "recoil_horizontal_max", float),
-                            min_horizontal=get(fm, "recoil_horizontal_min", float),
+                            max_horizontal=optget(fm, "recoil_horizontal_max", float),
+                            min_horizontal=optget(fm, "recoil_horizontal_min", float),
                             horizontal_tolerance=optget(
                                 fm, "recoil_horizontal_tolerance", float
                             ),
@@ -279,13 +285,13 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                 fm, "recoil_horizontal_min_increase", float, 0.0
                             ),
                             # Recovery
-                            recovery_acceleration=get(
+                            recovery_acceleration=optget(
                                 fm, "recoil_recovery_acceleration", float
                             ),
                             recovery_delay=optget(
                                 fm, "recoil_recovery_delay_ms", int, 0
                             ),
-                            recovery_rate=get(fm, "recoil_recovery_rate", float),
+                            recovery_rate=optget(fm, "recoil_recovery_rate", float),
                             # Misc
                             first_shot_multiplier=get(
                                 fm, "recoil_first_shot_modifier", float
@@ -298,23 +304,27 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                             ),
                         ),
                         # Projectile
-                        projectile=Projectile(
-                            # Speed
-                            speed=optget(fm, "projectile_speed_override", float)
-                            or get(pr, "speed", float),
-                            max_speed=optget(pr, "speed_max", float),
-                            acceleration=optget(pr, "acceleration", float),
-                            # Trajectory
-                            flight_type=ProjectileFlightType(
-                                get(pr, "projectile_flight_type_id", int)
-                            ),
-                            gravity=optget(pr, "gravity", float),
-                            turn_rate=optget(pr, "turn_rate", float),
-                            # Misc
-                            life_time=get(
-                                pr, "lifespan", lambda x: int(1_000 * float(x))
-                            ),
-                            drag=optget(pr, "drag", float),
+                        projectile=(
+                            Projectile(
+                                # Speed
+                                speed=optget(fm, "projectile_speed_override", float)
+                                or get(pr, "speed", float),
+                                max_speed=optget(pr, "speed_max", float),
+                                acceleration=optget(pr, "acceleration", float),
+                                # Trajectory
+                                flight_type=ProjectileFlightType(
+                                    get(pr, "projectile_flight_type_id", int)
+                                ),
+                                gravity=optget(pr, "gravity", float),
+                                turn_rate=optget(pr, "turn_rate", float),
+                                # Misc
+                                life_time=get(
+                                    pr, "lifespan", lambda x: int(1_000 * float(x))
+                                ),
+                                drag=optget(pr, "drag", float),
+                            )
+                            if pr is not None
+                            else None
                         ),
                         # Player state cone of fire
                         player_state_cone_of_fire=player_state_cone_of_fire,

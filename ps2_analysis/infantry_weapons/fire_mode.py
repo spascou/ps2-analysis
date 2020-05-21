@@ -53,7 +53,7 @@ class FireMode:
     recoil: Recoil
 
     # Projectile
-    projectile: Projectile
+    projectile: Optional[Projectile]
 
     # Player state cones of fire
     player_state_cone_of_fire: Dict[PlayerState, ConeOfFire]
@@ -91,13 +91,12 @@ class FireMode:
         # Recoil
         recoil: Recoil,
         # Projectile
-        projectile: Projectile,
+        projectile: Optional[Projectile],
         # Player state cones of fire
         player_state_cone_of_fire: Dict[PlayerState, ConeOfFire],
         # Player state can ads
         player_state_can_ads: Dict[PlayerState, bool],
     ):
-        assert (ammo is None, heat is None) != (True, True)
         assert (ammo is not None, heat is not None) != (True, True)
 
         # Basic information

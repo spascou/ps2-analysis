@@ -8,9 +8,9 @@ class ConeOfFire:
     bloom: float
 
     # Recovery
-    recovery_delay: int
-    recovery_rate: float
-    recovery_delay_threshold: int
+    recovery_rate: Optional[float]
+    recovery_delay: Optional[int]
+    recovery_delay_threshold: Optional[int]
 
     # Multipliers
     multiplier: float
@@ -20,9 +20,9 @@ class ConeOfFire:
     pellet_spread: Optional[float]
 
     # Misc
-    grow_rate: float
-    shots_before_penalty: int
-    turn_penalty: float
+    grow_rate: Optional[float]
+    shots_before_penalty: Optional[int]
+    turn_penalty: Optional[float]
     range: float
 
     def __init__(
@@ -32,18 +32,18 @@ class ConeOfFire:
         min_angle: float,
         bloom: float,
         # Recovery
-        recovery_rate: float,
-        recovery_delay: int,
-        recovery_delay_threshold: int,
+        recovery_rate: Optional[float],
+        recovery_delay: Optional[int],
+        recovery_delay_threshold: Optional[int],
         # Multipliers
         multiplier: float,
         moving_multiplier: float,
         # Pellet
         pellet_spread: Optional[float],
         # Misc
-        grow_rate: float,
-        shots_before_penalty: int,
-        turn_penalty: float,
+        grow_rate: Optional[float],
+        shots_before_penalty: Optional[int],
+        turn_penalty: Optional[float],
         range: float,
     ):
         assert min_angle <= max_angle
@@ -54,8 +54,8 @@ class ConeOfFire:
         self.bloom = bloom
 
         # Recovery
-        self.recovery_delay = recovery_delay
         self.recovery_rate = recovery_rate
+        self.recovery_delay = recovery_delay
         self.recovery_delay_threshold = recovery_delay_threshold
 
         # Multipliers
