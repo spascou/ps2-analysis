@@ -1,6 +1,8 @@
 import json
 from typing import Dict, FrozenSet, List
 
+from ps2_analysis.data_file import DataFile, load_data_file
+from ps2_analysis.utils import get, optget
 from ps2_census.enums import (
     Faction,
     FireModeType,
@@ -9,9 +11,6 @@ from ps2_census.enums import (
     ProjectileFlightType,
 )
 from slugify import slugify
-
-from ps2_analysis.data_file import DataFile, load_data_file
-from ps2_analysis.utils import get, optget
 
 from .ammo import Ammo
 from .attachment import Attachment
@@ -353,6 +352,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                     item_id=get(at, "item_id", int),
                     name=at["name"]["en"],
                     description=at.get("description", {"en": None})["en"],
+                    slug=slugify(at["name"]["en"]),
                     image_path=at.get("image_path"),
                     is_default=get(at, "is_default_attachment", int) == 1,
                 )
