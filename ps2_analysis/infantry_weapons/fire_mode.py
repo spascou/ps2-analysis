@@ -27,7 +27,7 @@ class FireMode:
     turn_multiplier: float
 
     # Damage profiles
-    direct_damage_profile: DamageProfile
+    direct_damage_profile: Optional[DamageProfile]
     indirect_damage_profile: Optional[DamageProfile]
 
     # Zoom
@@ -72,7 +72,7 @@ class FireMode:
         move_multiplier: float,
         turn_multiplier: float,
         # Damage profiles
-        direct_damage_profile: DamageProfile,
+        direct_damage_profile: Optional[DamageProfile],
         indirect_damage_profile: Optional[DamageProfile],
         # Zoom
         zoom: float,

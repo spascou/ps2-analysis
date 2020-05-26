@@ -1,5 +1,5 @@
 import json
-from typing import Dict, FrozenSet, List, Optional
+from typing import Dict, FrozenSet, List, Optional, Set
 
 from ps2_census.enums import (
     Faction,
@@ -146,8 +146,10 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                         damage_direct_effect["resist_type"] = ResistType(
                             get(effect, "resist_type_id", int)
                         )
-                        damage_direct_effect["target_type"] = TargetType(
-                            get(effect, "target_type_id", int)
+                        damage_direct_effect["target_type"] = (
+                            TargetType(get(effect, "target_type_id", int))
+                            if "target_type_id" in effect
+                            else None
                         )
 
                         direct_effect_type: dict = effect["effect_type"]
@@ -190,31 +192,39 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                     fire_mode: FireMode = FireMode(
                         # Basic information
                         type=FireModeType(get(fm, "fire_mode_type_id", int)),
-                        description=fm["description"]["en"],
+                        description=fm["description"]["en"]
+                        if "description" in fm
+                        else "",
                         is_ads=optget(fm, "iron_sights", lambda x: int(x) == 1, False),
                         detect_range=optget(fm, "fire_detect_range", float, 0.0),
                         # Movement modifiers
                         turn_multiplier=get(fm, "turn_modifier", float),
                         move_multiplier=get(fm, "move_modifier", float),
                         # Damage profiles
-                        direct_damage_profile=DamageProfile(
-                            # Base damage
-                            max_damage=get(fm, "max_damage", int),
-                            max_damage_range=optget(fm, "max_damage_range", float, 0.0),
-                            min_damage=optget(
-                                fm, "min_damage", int, get(fm, "max_damage", int)
-                            ),
-                            min_damage_range=get(fm, "min_damage_range", float),
-                            # Pellets
-                            pellets_count=get(fm, "fire_pellets_per_shot", int),
-                            # Locational modifiers
-                            location_multiplier={
-                                DamageLocation.HEAD: 1.0
-                                + optget(fm, "damage_head_multiplier", float, 0.0),
-                                DamageLocation.LEGS: 1.0
-                                + optget(fm, "damage_legs_multiplier", float, 0.0),
-                            },
-                            effect=damage_direct_effect,
+                        direct_damage_profile=(
+                            DamageProfile(
+                                # Base damage
+                                max_damage=get(fm, "max_damage", int),
+                                max_damage_range=optget(
+                                    fm, "max_damage_range", float, 0.0
+                                ),
+                                min_damage=optget(
+                                    fm, "min_damage", int, get(fm, "max_damage", int)
+                                ),
+                                min_damage_range=get(fm, "min_damage_range", float),
+                                # Pellets
+                                pellets_count=get(fm, "fire_pellets_per_shot", int),
+                                # Locational modifiers
+                                location_multiplier={
+                                    DamageLocation.HEAD: 1.0
+                                    + optget(fm, "damage_head_multiplier", float, 0.0),
+                                    DamageLocation.LEGS: 1.0
+                                    + optget(fm, "damage_legs_multiplier", float, 0.0),
+                                },
+                                effect=damage_direct_effect,
+                            )
+                            if "max_damage" in fm
+                            else None
                         ),
                         indirect_damage_profile=(
                             DamageProfile(
@@ -389,13 +399,40 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
 
                     fire_modes.append(fire_mode)
 
-                fire_modes_descriptions: List[str] = [f.description for f in fire_modes]
-                assert len(set(fire_modes_descriptions)) == 1
+                fire_modes_descriptions: Set[Optional[str]] = set(
+                    [
+                        f.description
+                        if f.description not in {"Placeholder", ""}
+                        else None
+                        for f in fire_modes
+                    ]
+                )
+
+                fm_description: str
+                if (
+                    len(fire_modes_descriptions) == 2
+                    and None in fire_modes_descriptions
+                ):
+                    rem = (fire_modes_descriptions - {None}).pop()
+
+                    assert rem is not None
+                    fm_description = rem
+
+                else:
+                    assert len(fire_modes_descriptions) == 1
+
+                    rem = fire_modes_descriptions.pop()
+
+                    assert rem is not None
+                    fm_description = rem
+
+                for f in fire_modes:
+                    f.description = fm_description
 
                 fire_group: FireGroup = FireGroup(
                     # General information
                     index=optget(_fg, "fire_group_index", int, 0),
-                    description=fire_modes_descriptions[0],
+                    description=fm_description,
                     transition_time=optget(fg, "transition_duration_ms", int, 0),
                     # Fire modes
                     fire_modes=fire_modes,
