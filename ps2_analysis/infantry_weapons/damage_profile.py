@@ -22,6 +22,9 @@ class DamageProfile:
     # Locational modifiers
     location_multiplier: Dict[DamageLocation, float]
 
+    # Effect
+    effect: Dict[str, str]
+
     def __init__(
         self,
         # Base damage
@@ -33,6 +36,8 @@ class DamageProfile:
         pellets_count: int,
         # Locational modifiers
         location_multiplier: Optional[Dict[DamageLocation, float]] = None,
+        # Effect
+        effect: Optional[Dict[str, str]] = None,
     ):
         assert pellets_count >= 1
         assert min_damage <= max_damage
@@ -49,6 +54,9 @@ class DamageProfile:
 
         # Locational modifiers
         self.location_multiplier = location_multiplier if location_multiplier else {}
+
+        # Effect
+        self.effect = effect if effect else {}
 
     @property
     def damage_delta(self) -> int:

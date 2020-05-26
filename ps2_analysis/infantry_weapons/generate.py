@@ -7,6 +7,8 @@ from ps2_census.enums import (
     ItemCategory,
     PlayerState,
     ProjectileFlightType,
+    ResistType,
+    TargetType,
 )
 from slugify import slugify
 
@@ -134,6 +136,57 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                             PlayerState(get(ps, "player_state_id", int))
                         ] = (get(ps, "can_iron_sight", int) == 1)
 
+                    # Direct damage effect
+                    damage_direct_effect: Optional[Dict[str, str]] = None
+                    if "damage_direct_effect" in fm:
+                        effect = fm["damage_direct_effect"]
+
+                        damage_direct_effect = {}
+
+                        damage_direct_effect["resist_type"] = ResistType(
+                            get(effect, "resist_type_id", int)
+                        )
+                        damage_direct_effect["target_type"] = TargetType(
+                            get(effect, "target_type_id", int)
+                        )
+
+                        direct_effect_type: dict = effect["effect_type"]
+
+                        damage_direct_effect["action"] = direct_effect_type[
+                            "description"
+                        ]
+
+                        for k, v in direct_effect_type.items():
+                            if k.startswith("string") or k.startswith("param"):
+                                if k in effect:
+                                    damage_direct_effect[v] = effect[k]
+
+                    # Indirect damage effect
+                    damage_indirect_effect: Optional[Dict[str, str]] = None
+                    if "damage_indirect_effect" in fm:
+                        effect = fm["damage_indirect_effect"]
+
+                        damage_indirect_effect = {}
+
+                        damage_indirect_effect["resist_type"] = ResistType(
+                            get(effect, "resist_type_id", int)
+                        )
+                        damage_indirect_effect["target_type"] = TargetType(
+                            get(effect, "target_type_id", int)
+                        )
+
+                        indirect_effect_type: dict = effect["effect_type"]
+
+                        damage_indirect_effect["action"] = indirect_effect_type[
+                            "description"
+                        ]
+
+                        for k, v in indirect_effect_type.items():
+                            if k.startswith("string") or k.startswith("param"):
+                                if k in effect:
+                                    damage_indirect_effect[v] = effect[k]
+
+                    # Fire Mode
                     fire_mode: FireMode = FireMode(
                         # Basic information
                         type=FireModeType(get(fm, "fire_mode_type_id", int)),
@@ -161,6 +214,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                 DamageLocation.LEGS: 1.0
                                 + optget(fm, "damage_legs_multiplier", float, 0.0),
                             },
+                            effect=damage_direct_effect,
                         ),
                         indirect_damage_profile=(
                             DamageProfile(
@@ -174,6 +228,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                     fm, "min_damage_ind_radius", float
                                 ),
                                 pellets_count=get(fm, "fire_pellets_per_shot", int),
+                                effect=damage_indirect_effect,
                             )
                             if "max_damage_ind" in fm
                             else None
