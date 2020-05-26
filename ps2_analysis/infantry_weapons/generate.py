@@ -27,7 +27,7 @@ from .projectile import Projectile
 from .recoil import Recoil
 
 EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
-    (6008686, 6004198, 6004714)  # Grenade printer  # Mystery weapon  # Soldier soaker
+    (6008686, 6004198,)  # Grenade printer  # Mystery weapon
 )
 
 
