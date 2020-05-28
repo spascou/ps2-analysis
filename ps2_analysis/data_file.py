@@ -90,7 +90,7 @@ def update_data_file(
 
             previously_returned: Optional[int] = None
 
-            i: int = 1
+            i: int = 0
             while previously_returned is None or previously_returned > 0:
                 query: Query = query_factory().set_service_id(service_id).filter(
                     "item_type_id", item_type.value
