@@ -115,7 +115,7 @@ class DamageProfile:
             previous_stk: Optional[int] = None
 
             r: int
-            for r in range(0, int(math.ceil(self.min_damage_range))):
+            for r in range(0, int(math.ceil(self.min_damage_range) + 1)):
                 stk: int = self.shots_to_kill(
                     distance=r + 0.1,
                     location=location,
