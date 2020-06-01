@@ -47,6 +47,6 @@ def optget(
     default: Optional[Any] = None,
 ):
     if key in mapping:
-        return typer(mapping[key])
+        return get(mapping=mapping, key=key, typer=typer)
     else:
         return default

@@ -1,6 +1,7 @@
 import math
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 class DamageLocation(str, Enum):
@@ -9,6 +10,7 @@ class DamageLocation(str, Enum):
     TORSO = "torso"
 
 
+@dataclass
 class DamageProfile:
     # Base damage
     max_damage: int
@@ -20,43 +22,10 @@ class DamageProfile:
     pellets_count: int
 
     # Locational modifiers
-    location_multiplier: Dict[DamageLocation, float]
+    location_multiplier: Dict[DamageLocation, float] = field(default_factory=dict)
 
     # Effect
-    effect: Dict[str, str]
-
-    def __init__(
-        self,
-        # Base damage
-        max_damage: int,
-        max_damage_range: float,
-        min_damage: int,
-        min_damage_range: float,
-        # Pellets
-        pellets_count: int,
-        # Locational modifiers
-        location_multiplier: Optional[Dict[DamageLocation, float]] = None,
-        # Effect
-        effect: Optional[Dict[str, str]] = None,
-    ):
-        assert pellets_count >= 1
-        assert min_damage <= max_damage
-        assert min_damage_range >= max_damage_range
-
-        # Base damage
-        self.max_damage = max_damage
-        self.max_damage_range = max_damage_range
-        self.min_damage = min_damage
-        self.min_damage_range = min_damage_range
-
-        # Pellets
-        self.pellets_count = pellets_count
-
-        # Locational modifiers
-        self.location_multiplier = location_multiplier if location_multiplier else {}
-
-        # Effect
-        self.effect = effect if effect else {}
+    effect: Dict[str, str] = field(default_factory=dict)
 
     @property
     def damage_delta(self) -> int:
@@ -76,11 +45,11 @@ class DamageProfile:
         elif distance >= self.min_damage_range:
             damage = self.min_damage
         else:
-            damage = self.max_damage * (
+            damage = self.min_damage * (
                 1
                 - (distance - self.min_damage_range)
                 / (self.max_damage_range - self.min_damage_range)
-            ) + self.min_damage * (
+            ) + self.max_damage * (
                 (distance - self.min_damage_range)
                 / (self.max_damage_range - self.min_damage_range)
             )
@@ -88,20 +57,22 @@ class DamageProfile:
         return int(math.floor(damage * self.location_multiplier.get(location, 1.0)))
 
     def damage_per_shot(
-        self, distance: int, location: DamageLocation = DamageLocation.TORSO
-    ):
+        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+    ) -> int:
+
         return self.pellets_count * self.damage_per_pellet(
             distance=distance, location=location
         )
 
     def shots_to_kill(
         self,
-        distance: int,
+        distance: float,
         location: DamageLocation = DamageLocation.TORSO,
         health: int = 500,
         shields: int = 500,
         damage_resistance: float = 0.0,
     ) -> int:
+
         return int(
             math.ceil(
                 (health + shields)
@@ -113,3 +84,49 @@ class DamageProfile:
                 )
             )
         )
+
+    def shots_to_kill_ranges(
+        self,
+        location: DamageLocation = DamageLocation.TORSO,
+        health: int = 500,
+        shields: int = 500,
+        damage_resistance: float = 0.0,
+    ) -> List[Tuple[int, int]]:
+
+        stk_ranges: List[Tuple[int, int]] = []
+
+        if self.damage_range_delta == 0:
+
+            stk_ranges.append(
+                (
+                    int(math.ceil(self.min_damage_range)),
+                    self.shots_to_kill(
+                        distance=int(math.ceil(self.min_damage_range)),
+                        location=location,
+                        health=health,
+                        shields=shields,
+                        damage_resistance=damage_resistance,
+                    ),
+                )
+            )
+
+        else:
+
+            previous_stk: Optional[int] = None
+
+            r: int
+            for r in range(0, int(math.ceil(self.min_damage_range))):
+                stk: int = self.shots_to_kill(
+                    distance=r + 0.1,
+                    location=location,
+                    health=health,
+                    shields=shields,
+                    damage_resistance=damage_resistance,
+                )
+
+                if previous_stk is None or stk != previous_stk:
+                    stk_ranges.append((r, stk))
+
+                previous_stk = stk
+
+        return stk_ranges

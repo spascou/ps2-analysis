@@ -69,6 +69,20 @@ def test_damage_per_pellet():
 
 def test_damage_per_shot():
     dp: DamageProfile = DamageProfile(
+        max_damage=1500,
+        max_damage_range=100,
+        min_damage=500,
+        min_damage_range=200,
+        pellets_count=1,
+    )
+
+    assert dp.damage_per_shot(0) == 1500
+    assert dp.damage_per_shot(100) == 1500
+    assert dp.damage_per_shot(150) == 1000
+    assert dp.damage_per_shot(200) == 500
+    assert dp.damage_per_shot(300) == 500
+
+    dp: DamageProfile = DamageProfile(
         max_damage=100,
         max_damage_range=0,
         min_damage=100,
@@ -104,6 +118,20 @@ def test_damage_location():
 
 def test_shots_to_kill():
     dp: DamageProfile = DamageProfile(
+        max_damage=1500,
+        max_damage_range=200,
+        min_damage=500,
+        min_damage_range=400,
+        pellets_count=1,
+    )
+
+    assert dp.shots_to_kill(0) == 1
+    assert dp.shots_to_kill(200) == 1
+    assert dp.shots_to_kill(300.1) == 2
+    assert dp.shots_to_kill(400) == 2
+    assert dp.shots_to_kill(500) == 2
+
+    dp: DamageProfile = DamageProfile(
         max_damage=500,
         max_damage_range=10,
         min_damage=100,
@@ -117,3 +145,25 @@ def test_shots_to_kill():
 
     assert dp.shots_to_kill(30) == 10
     assert dp.shots_to_kill(30, location=DamageLocation.HEAD) == 5
+
+
+def test_shots_to_kill_ranges():
+    dp: DamageProfile = DamageProfile(
+        max_damage=1500,
+        max_damage_range=0,
+        min_damage=1000,
+        min_damage_range=0,
+        pellets_count=1,
+    )
+
+    assert dp.shots_to_kill_ranges() == [(0, 1)]
+
+    dp: DamageProfile = DamageProfile(
+        max_damage=1500,
+        max_damage_range=100,
+        min_damage=500,
+        min_damage_range=200,
+        pellets_count=1,
+    )
+
+    assert dp.shots_to_kill_ranges() == [(0, 1), (150, 2)]

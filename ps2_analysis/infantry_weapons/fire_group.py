@@ -1,8 +1,10 @@
-from typing import List, Optional
+from dataclasses import dataclass, field
+from typing import List
 
 from .fire_mode import FireMode
 
 
+@dataclass
 class FireGroup:
     # General information
     index: int
@@ -10,21 +12,4 @@ class FireGroup:
     transition_time: int
 
     # Fire modes
-    fire_modes: List[FireMode]
-
-    def __init__(
-        self,
-        # General information
-        index: int,
-        description: str,
-        transition_time: int,
-        # Fire modes
-        fire_modes: Optional[List[FireMode]] = None,
-    ):
-        # General information
-        self.index = index
-        self.description = description
-        self.transition_time = transition_time
-
-        # Fire modes
-        self.fire_modes = fire_modes or []
+    fire_modes: List[FireMode] = field(default_factory=list)
