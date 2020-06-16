@@ -8,17 +8,23 @@ from ps2_census import Query
 from ps2_census.enums import ItemCategory, ItemType
 
 from .infantry_weapons.queries import infantry_weapons_query_factory
+from .vehicle_weapons.queries import vehicle_weapons_query_factory
 
 
 class DataFile(str, Enum):
     INFANTRY_WEAPONS = "infantry-weapons.ndjson"
+    VEHICLE_WEAPONS = "vehicle-weapons.ndjson"
 
 
 DATA_FILE_QUERY_FACTORY: Dict[DataFile, Callable[[], Query]] = {
-    DataFile.INFANTRY_WEAPONS: infantry_weapons_query_factory
+    DataFile.INFANTRY_WEAPONS: infantry_weapons_query_factory,
+    DataFile.VEHICLE_WEAPONS: vehicle_weapons_query_factory,
 }
 
-DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {DataFile.INFANTRY_WEAPONS: 10}
+DATA_FILE_QUERY_BATCH_SIZE: Dict[DataFile, int] = {
+    DataFile.INFANTRY_WEAPONS: 10,
+    DataFile.VEHICLE_WEAPONS: 10,
+}
 
 DATA_FILE_ITEM_CATEGORIES: Dict[DataFile, Set[ItemCategory]] = {
     DataFile.INFANTRY_WEAPONS: {
@@ -39,11 +45,44 @@ DATA_FILE_ITEM_CATEGORIES: Dict[DataFile, Set[ItemCategory]] = {
         ItemCategory.CROSSBOW,
         ItemCategory.HYBRID_RIFLE,
         ItemCategory.AERIAL_COMBAT_WEAPON,
-    }
+    },
+    DataFile.VEHICLE_WEAPONS: {
+        ItemCategory.VEHICLE_WEAPONS,
+        ItemCategory.FLASH_PRIMARY_WEAPON,
+        ItemCategory.GALAXY_LEFT_WEAPON,
+        ItemCategory.GALAXY_TAIL_WEAPON,
+        ItemCategory.GALAXY_RIGHT_WEAPON,
+        ItemCategory.GALAXY_TOP_WEAPON,
+        ItemCategory.HARASSER_TOP_GUNNER,
+        ItemCategory.LIBERATOR_BELLY_WEAPON,
+        ItemCategory.LIBERATOR_NOSE_CANNON,
+        ItemCategory.LIBERATOR_TAIL_WEAPON,
+        ItemCategory.LIGHTNING_PRIMARY_WEAPON,
+        ItemCategory.MAGRIDER_GUNNER_WEAPON,
+        ItemCategory.MAGRIDER_PRIMARY_WEAPON,
+        ItemCategory.MOSQUITO_NOSE_CANNON,
+        ItemCategory.MOSQUITO_WING_MOUNT,
+        ItemCategory.PROWLER_GUNNER_WEAPON,
+        ItemCategory.PROWLER_PRIMARY_WEAPON,
+        ItemCategory.REAVER_NOSE_CANNON,
+        ItemCategory.REAVER_WING_MOUNT,
+        ItemCategory.SCYTHE_NOSE_CANNON,
+        ItemCategory.SCYTHE_WING_MOUNT,
+        ItemCategory.SUNDERER_FRONT_GUNNER,
+        ItemCategory.SUNDERER_REAR_GUNNER,
+        ItemCategory.VANGUARD_GUNNER_WEAPON,
+        ItemCategory.VANGUARD_PRIMARY_WEAPON,
+        ItemCategory.VALKYRIE_NOSE_GUNNER,
+        ItemCategory.ANT_TOP_TURRET,
+        ItemCategory.BASTION_POINT_DEFENSE,
+        ItemCategory.BASTION_BOMBARD,
+        ItemCategory.BASTION_WEAPON_SYSTEM,
+    },
 }
 
 DATA_FILE_ITEM_TYPE: Dict[DataFile, ItemType] = {
-    DataFile.INFANTRY_WEAPONS: ItemType.WEAPON
+    DataFile.INFANTRY_WEAPONS: ItemType.WEAPON,
+    DataFile.VEHICLE_WEAPONS: ItemType.WEAPON,
 }
 
 
