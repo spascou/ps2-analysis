@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Set
+import decimal
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Set, Union
 
 
 def discover(data: Iterable[dict], path: str = "") -> Dict[str, Set[str]]:
@@ -50,3 +51,17 @@ def optget(
         return get(mapping=mapping, key=key, typer=typer)
     else:
         return default
+
+
+def float_range(
+    start: Union[int, float],
+    stop: Union[int, float],
+    step: Union[int, float],
+    precision_decimals: int = 2,
+):
+    start_d = decimal.Decimal(start)
+    stop_d = decimal.Decimal(stop)
+
+    while start_d < stop_d:
+        yield round(float(start_d), precision_decimals)
+        start_d += decimal.Decimal(step)
