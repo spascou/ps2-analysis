@@ -399,40 +399,23 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
 
                     fire_modes.append(fire_mode)
 
-                fire_modes_descriptions: Set[Optional[str]] = set(
+                fire_modes_descriptions: Set[str] = set(  # type: ignore
                     [
                         f.description
                         if f.description not in {"Placeholder", ""}
                         else None
                         for f in fire_modes
                     ]
-                )
+                ) - {None}
 
-                fm_description: str
-                if (
-                    len(fire_modes_descriptions) == 2
-                    and None in fire_modes_descriptions
-                ):
-                    rem = (fire_modes_descriptions - {None}).pop()
-
-                    assert rem is not None
-                    fm_description = rem
-
-                else:
-                    assert len(fire_modes_descriptions) == 1
-
-                    rem = fire_modes_descriptions.pop()
-
-                    assert rem is not None
-                    fm_description = rem
-
-                for f in fire_modes:
-                    f.description = fm_description
+                fg_description: str = ""
+                if fire_modes_descriptions:
+                    fg_description = " / ".join(list(fire_modes_descriptions))
 
                 fire_group: FireGroup = FireGroup(
                     # General information
                     index=optget(_fg, "fire_group_index", int, 0),
-                    description=fm_description,
+                    description=fg_description,
                     transition_time=optget(fg, "transition_duration_ms", int, 0),
                     # Fire modes
                     fire_modes=fire_modes,

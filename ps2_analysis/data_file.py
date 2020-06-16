@@ -38,6 +38,7 @@ DATA_FILE_ITEM_CATEGORIES: Dict[DataFile, Set[ItemCategory]] = {
         ItemCategory.BATTLE_RIFLE,
         ItemCategory.CROSSBOW,
         ItemCategory.HYBRID_RIFLE,
+        ItemCategory.AERIAL_COMBAT_WEAPON,
     }
 }
 
