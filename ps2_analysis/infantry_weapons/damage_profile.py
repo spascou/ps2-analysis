@@ -94,6 +94,7 @@ class DamageProfile:
         shields: int = 500,
         damage_resistance: float = 0.0,
         step: float = 0.1,
+        precision_decimals: int = 2,
     ) -> List[Tuple[float, int]]:
 
         stk_ranges: List[Tuple[float, int]] = []
@@ -101,7 +102,9 @@ class DamageProfile:
         if self.damage_range_delta > 0:
             previous_stk: Optional[int] = None
 
-            for r in float_range(0, self.min_damage_range + step, step):
+            for r in float_range(
+                0, self.min_damage_range + step, step, precision_decimals
+            ):
                 stk: int = self.shots_to_kill(
                     distance=r,
                     location=location,
@@ -112,7 +115,7 @@ class DamageProfile:
 
                 if previous_stk is None or stk != previous_stk:
                     if r >= step:
-                        stk_ranges.append((r - step, stk))
+                        stk_ranges.append((round(r - step, precision_decimals), stk))
                     else:
                         stk_ranges.append((r, stk))
 
