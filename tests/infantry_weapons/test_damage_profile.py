@@ -156,7 +156,7 @@ def test_shots_to_kill_ranges():
         pellets_count=1,
     )
 
-    assert dp.shots_to_kill_ranges() == [(0, 1)]
+    assert dp.shots_to_kill_ranges() == [(0.0, 1)]
 
     dp: DamageProfile = DamageProfile(
         max_damage=1500,
@@ -166,4 +166,4 @@ def test_shots_to_kill_ranges():
         pellets_count=1,
     )
 
-    assert dp.shots_to_kill_ranges() == [(0, 1), (150, 2)]
+    assert dp.shots_to_kill_ranges() == [(0.0, 1), (150.0, 2)]

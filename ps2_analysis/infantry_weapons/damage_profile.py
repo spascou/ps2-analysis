@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
+from ps2_analysis.utils import float_range
+
 
 class DamageLocation(str, Enum):
     HEAD = "head"
@@ -91,33 +93,17 @@ class DamageProfile:
         health: int = 500,
         shields: int = 500,
         damage_resistance: float = 0.0,
-    ) -> List[Tuple[int, int]]:
+        step: float = 0.1,
+    ) -> List[Tuple[float, int]]:
 
-        stk_ranges: List[Tuple[int, int]] = []
+        stk_ranges: List[Tuple[float, int]] = []
 
-        if self.damage_range_delta == 0:
-
-            stk_ranges.append(
-                (
-                    int(math.ceil(self.min_damage_range)),
-                    self.shots_to_kill(
-                        distance=int(math.ceil(self.min_damage_range)),
-                        location=location,
-                        health=health,
-                        shields=shields,
-                        damage_resistance=damage_resistance,
-                    ),
-                )
-            )
-
-        else:
-
+        if self.damage_range_delta > 0:
             previous_stk: Optional[int] = None
 
-            r: int
-            for r in range(0, int(math.ceil(self.min_damage_range) + 1)):
+            for r in float_range(0, self.min_damage_range + step, step):
                 stk: int = self.shots_to_kill(
-                    distance=r + 0.1,
+                    distance=r,
                     location=location,
                     health=health,
                     shields=shields,
@@ -125,8 +111,25 @@ class DamageProfile:
                 )
 
                 if previous_stk is None or stk != previous_stk:
-                    stk_ranges.append((r, stk))
+                    if r >= step:
+                        stk_ranges.append((r - step, stk))
+                    else:
+                        stk_ranges.append((r, stk))
 
                 previous_stk = stk
+        else:
+
+            stk_ranges.append(
+                (
+                    0.0,
+                    self.shots_to_kill(
+                        distance=self.max_damage_range,
+                        location=location,
+                        health=health,
+                        shields=shields,
+                        damage_resistance=damage_resistance,
+                    ),
+                )
+            )
 
         return stk_ranges
