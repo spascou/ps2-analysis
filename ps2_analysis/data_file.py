@@ -77,6 +77,11 @@ DATA_FILE_ITEM_CATEGORIES: Dict[DataFile, Set[ItemCategory]] = {
         ItemCategory.BASTION_POINT_DEFENSE,
         ItemCategory.BASTION_BOMBARD,
         ItemCategory.BASTION_WEAPON_SYSTEM,
+        ItemCategory.COLOSSUS_PRIMARY_WEAPON,
+        ItemCategory.COLOSSUS_FRONT_RIGHT_WEAPON,
+        ItemCategory.COLOSSUS_FRONT_LEFT_WEAPON,
+        ItemCategory.COLOSSUS_REAR_RIGHT_WEAPON,
+        ItemCategory.COLOSSUS_REAR_LEFT_WEAPON,
     },
 }
 
