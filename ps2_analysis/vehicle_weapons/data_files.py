@@ -10,7 +10,6 @@ from .queries import vehicle_weapons_query_factory
 
 DATA_FILENAME = "vehicle-weapons.ndjson"
 
-
 QUERY_FACTORY: Callable[[], Query] = vehicle_weapons_query_factory
 
 QUERY_BATCH_SIZE: int = 10

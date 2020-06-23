@@ -1,19 +1,17 @@
 import json
 import os
-from typing import Callable, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import ndjson
 from ps2_census import Query
 from ps2_census.enums import ItemCategory, ItemType
 
-from .queries import infantry_weapons_query_factory
+from .data_fixers import INFANTRY_WEAPONS_DATA_FIXERS
+from .queries import infantry_weapon_query_factory
 
 DATA_FILENAME = "infantry-weapons.ndjson"
 
-
-QUERY_FACTORY: Callable[[], Query] = infantry_weapons_query_factory
-
-QUERY_BATCH_SIZE: int = 10
+QUERY_BATCH_SIZE: int = 50
 
 ITEM_CATEGORIES: Set[ItemCategory] = {
     ItemCategory.EXPLOSIVE,
@@ -34,8 +32,6 @@ ITEM_CATEGORIES: Set[ItemCategory] = {
     ItemCategory.HYBRID_RIFLE,
     ItemCategory.AERIAL_COMBAT_WEAPON,
 }
-
-ITEM_TYPE: ItemType = ItemType.WEAPON
 
 
 def update_data_files(
@@ -65,9 +61,13 @@ def update_data_files(
 
             i: int = 0
             while previously_returned is None or previously_returned > 0:
-                query: Query = QUERY_FACTORY().set_service_id(service_id).filter(
-                    "item_type_id", ITEM_TYPE.value
-                ).filter("item_category_id", item_category.value).start(i).limit(
+                query: Query = infantry_weapon_query_factory().set_service_id(
+                    service_id
+                ).filter("item_type_id", ItemType.WEAPON.value).filter(
+                    "item_category_id", item_category.value
+                ).start(
+                    i
+                ).limit(
                     QUERY_BATCH_SIZE
                 )
                 result: dict = query.get()

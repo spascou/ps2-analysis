@@ -2,6 +2,7 @@ from typing import Callable
 
 from ps2_census import Collection, Join
 
+# From item to fire groups
 item_to_weapon_join_factory: Callable[[], Join] = (
     Join(Collection.ITEM_TO_WEAPON)
     .on("item_id")
@@ -27,80 +28,7 @@ weapon_to_fire_group_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
-fire_group_join_factory: Callable[[], Join] = (
-    Join(Collection.FIRE_GROUP)
-    .on("fire_group_id")
-    .to("fire_group_id")
-    .inject_at("fire_group")
-    .get_factory()
-)
-
-fire_group_to_fire_mode_join_factory: Callable[[], Join] = (
-    Join(Collection.FIRE_GROUP_TO_FIRE_MODE)
-    .list(1)
-    .on("fire_group_id")
-    .to("fire_group_id")
-    .inject_at("fire_group_to_fire_modes")
-    .get_factory()
-)
-
-fire_mode_join_factory: Callable[[], Join] = (
-    Join(Collection.FIRE_MODE_2)
-    .on("fire_mode_id")
-    .to("fire_mode_id")
-    .inject_at("fire_mode")
-    .get_factory()
-)
-
-fire_mode_to_damage_direct_effect_join_factory: Callable[[], Join] = (
-    Join(Collection.EFFECT)
-    .on("damage_direct_effect_id")
-    .to("effect_id")
-    .inject_at("damage_direct_effect")
-    .nest(
-        Join(Collection.EFFECT_TYPE)
-        .on("effect_type_id")
-        .to("effect_type_id")
-        .inject_at("effect_type")
-    )
-    .get_factory()
-)
-
-fire_mode_to_damage_indirect_effect_join_factory: Callable[[], Join] = (
-    Join(Collection.EFFECT)
-    .on("damage_indirect_effect_id")
-    .to("effect_id")
-    .inject_at("damage_indirect_effect")
-    .nest(
-        Join(Collection.EFFECT_TYPE)
-        .on("effect_type_id")
-        .to("effect_type_id")
-        .inject_at("effect_type")
-    )
-    .get_factory()
-)
-
-fire_mode_to_projectile_join_factory: Callable[[], Join] = (
-    Join(Collection.FIRE_MODE_TO_PROJECTILE)
-    .on("fire_mode_id")
-    .to("fire_mode_id")
-    .inject_at("fire_mode_to_projectile")
-    .get_factory()
-)
-
-projectile_join_factory: Callable[[], Join] = (
-    Join(Collection.PROJECTILE).inject_at("projectile").get_factory()
-)
-
-player_state_group_join_factory: Callable[[], Join] = (
-    Join(Collection.PLAYER_STATE_GROUP_2)
-    .list(1)
-    .on("player_state_group_id")
-    .to("player_state_group_id")
-    .inject_at("player_state_groups")
-    .get_factory()
-)
-
+# Attachments
 item_attachment_join_factory: Callable[[], Join] = (
     Join(Collection.ITEM_ATTACHMENT)
     .on("item_id")
@@ -129,6 +57,7 @@ item_attachment_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
+# Datasheet
 weapon_datasheet_join_factory: Callable[[], Join] = (
     Join(Collection.WEAPON_DATASHEET)
     .on("item_id")

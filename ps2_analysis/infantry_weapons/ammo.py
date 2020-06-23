@@ -18,9 +18,6 @@ class Ammo:
     loop_start_time: Optional[int]
     loop_end_time: Optional[int]
 
-    # Chambering
-    can_chamber_in_ads: Optional[bool]
-
     @property
     def shots_per_clip(self) -> int:
 

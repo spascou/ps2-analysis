@@ -1,26 +1,6 @@
 from typing import Callable, Dict
 
 
-def nc05_jackhammer(data: dict):
-    data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][1]["fire_group"][
-        "fire_group_to_fire_modes"
-    ][0]["fire_mode"]["fire_mode_type_id"] = "0"
-
-
-def ns_11(data: dict):
-    data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][1]["fire_group"][
-        "fire_group_to_fire_modes"
-    ][0]["fire_mode"]["fire_mode_type_id"] = "0"
-
-
-def beamer_vs3(data: dict):
-    psg: dict = data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][0][
-        "fire_group"
-    ]["fire_group_to_fire_modes"][1]["fire_mode"]["player_state_groups"][4]
-
-    psg["cof_min"], psg["cof_max"] = psg["cof_max"], psg["cof_min"]
-
-
 def betelgeuse_54_a(data: dict):
     del data["weapon_datasheet"]["capacity"]
     del data["weapon_datasheet"]["clip_size"]
@@ -60,32 +40,7 @@ def triumph_flare_gun(data: dict):
     data["weapon_datasheet"] = {"capacity": "22", "clip_size": "2"}
 
 
-def serpent_ve92(data: dict):
-    data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][0]["fire_group"][
-        "fire_group_to_fire_modes"
-    ][1]["fire_mode"]["description"]["en"] = "Auto"
-    data["item_to_weapon"]["weapon"]["weapon_to_fire_groups"][1]["fire_group"][
-        "fire_group_to_fire_modes"
-    ][1]["fire_mode"]["description"]["en"] = "Semi-Auto"
-
-
 INFANTRY_WEAPONS_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
-    7528: nc05_jackhammer,
-    803756: nc05_jackhammer,
-    6004174: nc05_jackhammer,
-    69999: ns_11,
-    70998: ns_11,
-    75005: ns_11,
-    75234: ns_11,
-    802099: ns_11,
-    802100: ns_11,
-    802101: ns_11,
-    802102: ns_11,
-    6003571: ns_11,
-    6008371: ns_11,
-    21: beamer_vs3,
-    1959: beamer_vs3,
-    7403: beamer_vs3,
     1894: betelgeuse_54_a,
     1909: darkstar,
     1919: eclipse_ve3a,
@@ -103,5 +58,43 @@ INFANTRY_WEAPONS_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
     803008: triumph_flare_gun,
     803009: triumph_flare_gun,
     6003793: ns_showdown,
-    7214: serpent_ve92,
+}
+
+
+def serpent_ve92_first_fire_group(data: dict):
+    data["fire_group_to_fire_modes"][1]["fire_mode"]["description"]["en"] = "Auto"
+
+
+def serpent_ve92_second_fire_group(data: dict):
+    data["fire_group_to_fire_modes"][1]["fire_mode"]["description"]["en"] = "Semi-Auto"
+
+
+def nc05_jackhammer_second_fire_group(data: dict):
+    data["fire_group_to_fire_modes"][0]["fire_mode"]["fire_mode_type_id"] = "0"
+
+
+def ns_11_second_fire_group(data: dict):
+    data["fire_group_to_fire_modes"][0]["fire_mode"]["fire_mode_type_id"] = "0"
+
+
+def beamer_vs3_first_fire_group(data: dict):
+    psg: dict = data["fire_group_to_fire_modes"][1]["fire_mode"]["player_state_groups"][
+        4
+    ]
+
+    psg["cof_min"], psg["cof_max"] = psg["cof_max"], psg["cof_min"]
+
+
+FIRE_GROUP_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
+    7214: serpent_ve92_first_fire_group,
+    1022: serpent_ve92_second_fire_group,
+    94: nc05_jackhammer_second_fire_group,
+    80103: nc05_jackhammer_second_fire_group,
+    80332: nc05_jackhammer_second_fire_group,
+    21501: ns_11_second_fire_group,
+    70015: ns_11_second_fire_group,
+    80592: ns_11_second_fire_group,
+    11: beamer_vs3_first_fire_group,
+    766: beamer_vs3_first_fire_group,
+    7403: beamer_vs3_first_fire_group,
 }

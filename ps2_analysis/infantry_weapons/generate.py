@@ -12,14 +12,17 @@ from ps2_census.enums import (
 )
 from slugify import slugify
 
+from ps2_analysis.fire_groups.data_files import (
+    load_data_files as load_fire_groups_data_files,
+)
 from ps2_analysis.utils import get, optget
 
 from .ammo import Ammo
 from .attachment import Attachment
 from .cone_of_fire import ConeOfFire
 from .damage_profile import DamageLocation, DamageProfile
-from .data_files import load_data_files
-from .data_fixers import INFANTRY_WEAPONS_DATA_FIXERS
+from .data_files import load_data_files as load_infantry_weapons_data_files
+from .data_fixers import FIRE_GROUP_DATA_FIXERS, INFANTRY_WEAPONS_DATA_FIXERS
 from .fire_group import FireGroup
 from .fire_mode import FireMode
 from .fire_timing import FireTiming
@@ -36,14 +39,28 @@ EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
 def generate_infantry_weapons(data_files_directory: str) -> List[InfantryWeapon]:
     print("Generating infantry weapon objects")
 
-    raw: List[dict] = load_data_files(directory=data_files_directory)
+    # Load and filter infantry weapons
+    all_infantry_weapons: List[dict] = load_infantry_weapons_data_files(
+        directory=data_files_directory
+    )
 
-    filtered: List[dict] = filter_infantry_weapons(raw)
+    filtered_infantry_weapons: List[dict] = filter_infantry_weapons(
+        all_infantry_weapons
+    )
 
-    weapons: List[InfantryWeapon] = parse_infantry_weapons_data(filtered)
-    print(f"Generated {len(weapons)} infantry weapon objects")
+    # Load fire groups
+    all_fire_groups: List[dict] = load_fire_groups_data_files(
+        directory=data_files_directory
+    )
 
-    return weapons
+    # Generate infantry weapons
+    infantry_weapons: List[InfantryWeapon] = parse_infantry_weapons_data(
+        infantry_weapons_data=filtered_infantry_weapons,
+        fire_groups_data=all_fire_groups,
+    )
+    print(f"Generated {len(infantry_weapons)} infantry weapon objects")
+
+    return infantry_weapons
 
 
 def filter_infantry_weapons(data: List[dict]) -> List[dict]:
@@ -54,11 +71,17 @@ def filter_infantry_weapons(data: List[dict]) -> List[dict]:
     return ifw
 
 
-def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
+def parse_infantry_weapons_data(
+    infantry_weapons_data: List[dict], fire_groups_data: List[dict]
+) -> List[InfantryWeapon]:
     infantry_weapons: List[InfantryWeapon] = []
 
+    fire_groups_id_idx: Dict[int, dict] = {
+        int(x["fire_group_id"]): x for x in fire_groups_data
+    }
+
     d: dict
-    for d in data:
+    for d in infantry_weapons_data:
         item_id: int = get(d, "item_id", int)
 
         if item_id in INFANTRY_WEAPONS_DATA_FIXERS:
@@ -76,7 +99,12 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                 w["weapon_to_fire_groups"],
                 key=lambda x: optget(x, "fire_group_index", int, 0),
             ):
-                fg: dict = _fg["fire_group"]
+                fire_group_id: int = get(_fg, "fire_group_id", int)
+
+                fg: dict = fire_groups_id_idx[fire_group_id]
+
+                if fire_group_id in FIRE_GROUP_DATA_FIXERS:
+                    FIRE_GROUP_DATA_FIXERS[fire_group_id](fg)
 
                 # Fire modes
                 fire_modes: List[FireMode] = []
@@ -271,13 +299,6 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                 ),
                                 loop_start_time=optget(fm, "reload_loop_start_ms", int),
                                 loop_end_time=optget(fm, "reload_loop_end_ms", int),
-                                # Chamber
-                                can_chamber_in_ads=optget(
-                                    fg,
-                                    "can_chamber_ironsights",
-                                    lambda x: int(x) == 1,
-                                    None,
-                                ),
                             )
                             if w_d is not None and optget(w_d, "capacity", int, 0) > 0
                             else None
