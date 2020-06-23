@@ -77,6 +77,7 @@ def parse_fire_group_data(
     w_d: Optional[dict],
     fire_groups_id_idx: Dict[int, dict],
     no_ammo_nor_heat: bool = False,
+    description_prefix: str = "",
 ) -> FireGroup:
 
     fg: dict = fire_groups_id_idx[fg_id]
@@ -378,7 +379,9 @@ def parse_fire_group_data(
 
         fg_description: str = ""
         if fire_modes_descriptions:
-            fg_description = " / ".join(list(fire_modes_descriptions))
+            fg_description = " | ".join(
+                (description_prefix, " / ".join(list(fire_modes_descriptions)))
+            )
 
         fire_group: FireGroup = FireGroup(
             # General information
@@ -473,6 +476,7 @@ def parse_infantry_weapons_data(
                             w_d=w_d,
                             fire_groups_id_idx=fire_groups_id_idx,
                             no_ammo_nor_heat=True,
+                            description_prefix=at["name"]["en"],
                         )
                     )
 
