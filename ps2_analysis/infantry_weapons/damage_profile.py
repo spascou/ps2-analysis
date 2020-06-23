@@ -75,17 +75,16 @@ class DamageProfile:
         damage_resistance: float = 0.0,
     ) -> int:
 
-        return int(
-            math.ceil(
-                (health + shields)
-                / (
-                    math.ceil(
-                        self.damage_per_shot(distance=distance, location=location)
-                        * (1 - damage_resistance)
-                    )
+        dps: int = self.damage_per_shot(distance=distance, location=location)
+
+        if dps > 0:
+            return int(
+                math.ceil(
+                    (health + shields) / (math.ceil(dps * (1 - damage_resistance)))
                 )
             )
-        )
+        else:
+            return 0
 
     def shots_to_kill_ranges(
         self,
