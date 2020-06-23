@@ -379,9 +379,10 @@ def parse_fire_group_data(
 
         fg_description: str = ""
         if fire_modes_descriptions:
-            fg_description = " | ".join(
-                (description_prefix, " / ".join(list(fire_modes_descriptions)))
-            )
+            fg_description = " / ".join(list(fire_modes_descriptions))
+
+            if len(description_prefix):
+                fg_description = f"{description_prefix} | {fg_description}"
 
         fire_group: FireGroup = FireGroup(
             # General information
