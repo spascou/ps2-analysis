@@ -1,9 +1,9 @@
-import json
+# import json
 import logging
 import os
 from typing import Dict, List, Optional
 
-from ps2_analysis.data_file import DataFile, update_data_file
+from ps2_analysis.vehicle_weapons.data_files import update_data_files
 from ps2_analysis.vehicle_weapons.generate import generate_vehicle_weapons
 from ps2_analysis.vehicle_weapons.vehicle_weapon import VehicleWeapon
 
@@ -15,10 +15,8 @@ DATAFILES_DIRECTORY: str = "datafiles"
 if not SERVICE_ID:
     raise ValueError("CENSUS_SERVICE_ID envvar not found")
 
-update_data_file(
-    data_file=DataFile.VEHICLE_WEAPONS,
-    directory=DATAFILES_DIRECTORY,
-    service_id=SERVICE_ID,
+update_data_files(
+    directory=DATAFILES_DIRECTORY, service_id=SERVICE_ID,
 )
 
 vehicle_weapons: List[VehicleWeapon] = generate_vehicle_weapons(

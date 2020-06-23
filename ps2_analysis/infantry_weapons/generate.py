@@ -12,13 +12,13 @@ from ps2_census.enums import (
 )
 from slugify import slugify
 
-from ps2_analysis.data_file import DataFile, load_data_file
 from ps2_analysis.utils import get, optget
 
 from .ammo import Ammo
 from .attachment import Attachment
 from .cone_of_fire import ConeOfFire
 from .damage_profile import DamageLocation, DamageProfile
+from .data_files import load_data_files
 from .data_fixers import INFANTRY_WEAPONS_DATA_FIXERS
 from .fire_group import FireGroup
 from .fire_mode import FireMode
@@ -36,9 +36,7 @@ EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
 def generate_infantry_weapons(data_files_directory: str) -> List[InfantryWeapon]:
     print("Generating infantry weapon objects")
 
-    raw: List[dict] = load_data_file(
-        data_file=DataFile.INFANTRY_WEAPONS, directory=data_files_directory
-    )
+    raw: List[dict] = load_data_files(directory=data_files_directory)
 
     filtered: List[dict] = filter_infantry_weapons(raw)
 
@@ -221,7 +219,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                     DamageLocation.LEGS: 1.0
                                     + optget(fm, "damage_legs_multiplier", float, 0.0),
                                 },
-                                effect=damage_direct_effect,
+                                effect=damage_direct_effect or {},
                             )
                             if "max_damage" in fm
                             else None
@@ -238,7 +236,7 @@ def parse_infantry_weapons_data(data: List[dict]) -> List[InfantryWeapon]:
                                     fm, "min_damage_ind_radius", float
                                 ),
                                 pellets_count=get(fm, "fire_pellets_per_shot", int),
-                                effect=damage_indirect_effect,
+                                effect=damage_indirect_effect or {},
                             )
                             if "max_damage_ind" in fm
                             else None
