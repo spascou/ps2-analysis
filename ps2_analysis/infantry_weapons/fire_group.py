@@ -8,6 +8,7 @@ from .fire_mode import FireMode
 class FireGroup:
     # General information
     index: int
+    slug: str
     description: str
     transition_time: int
 

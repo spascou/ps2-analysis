@@ -387,6 +387,7 @@ def parse_fire_group_data(
         fire_group: FireGroup = FireGroup(
             # General information
             index=optget(fg, "fire_group_index", int, 0),
+            slug=slugify(fg_description),
             description=fg_description,
             transition_time=optget(fg, "transition_duration_ms", int, 0),
             # Fire modes
