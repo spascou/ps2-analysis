@@ -7,8 +7,7 @@ from .fire_mode import FireMode
 @dataclass
 class FireGroup:
     # General information
-    index: int
-    slug: str
+    fire_group_id: int
     description: str
     transition_time: int
 
