@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from .fire_group import FireGroup
+
 
 @dataclass
 class Attachment:
@@ -14,3 +16,6 @@ class Attachment:
 
     # Effects
     effects: List[Dict[str, str]] = field(default_factory=list)
+
+    # Fire groups
+    fire_groups: List[FireGroup] = field(default_factory=list)
