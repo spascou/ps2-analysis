@@ -10,7 +10,7 @@ from .joins import (
     weapon_to_fire_group_join_factory,
 )
 
-infantry_weapon_query_factory: Callable[[], Query] = (
+weapon_query_factory: Callable[[], Query] = (
     Query(Collection.ITEM)
     .lang("en")
     .sort(("item_id", 1))

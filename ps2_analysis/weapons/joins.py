@@ -2,7 +2,7 @@ from typing import Callable
 
 from ps2_census import Collection, Join
 
-# From item to fire groups
+# Item to weapon
 item_to_weapon_join_factory: Callable[[], Join] = (
     Join(Collection.ITEM_TO_WEAPON)
     .on("item_id")
@@ -19,6 +19,7 @@ weapon_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
+# Weapon to fire groups
 weapon_to_fire_group_join_factory: Callable[[], Join] = (
     Join(Collection.WEAPON_TO_FIRE_GROUP)
     .list(1)
@@ -28,7 +29,7 @@ weapon_to_fire_group_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
-# Attachments
+# Item to attachments
 item_attachment_join_factory: Callable[[], Join] = (
     Join(Collection.ITEM_ATTACHMENT)
     .on("item_id")
@@ -57,7 +58,7 @@ item_attachment_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
-# Datasheet
+# Weapon to datasheet
 weapon_datasheet_join_factory: Callable[[], Join] = (
     Join(Collection.WEAPON_DATASHEET)
     .on("item_id")

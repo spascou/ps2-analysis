@@ -6,8 +6,7 @@ import ndjson
 from ps2_census import Query
 from ps2_census.enums import ItemCategory, ItemType
 
-from .data_fixers import INFANTRY_WEAPONS_DATA_FIXERS
-from .queries import infantry_weapon_query_factory
+from ps2_analysis.weapons.queries import weapon_query_factory
 
 DATA_FILENAME = "infantry-weapons.ndjson"
 
@@ -61,13 +60,9 @@ def update_data_files(
 
             i: int = 0
             while previously_returned is None or previously_returned > 0:
-                query: Query = infantry_weapon_query_factory().set_service_id(
-                    service_id
-                ).filter("item_type_id", ItemType.WEAPON.value).filter(
-                    "item_category_id", item_category.value
-                ).start(
-                    i
-                ).limit(
+                query: Query = weapon_query_factory().set_service_id(service_id).filter(
+                    "item_type_id", ItemType.WEAPON.value
+                ).filter("item_category_id", item_category.value).start(i).limit(
                     QUERY_BATCH_SIZE
                 )
                 result: dict = query.get()

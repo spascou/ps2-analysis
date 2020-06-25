@@ -12,7 +12,6 @@ class Heat:
     overheat_penalty_time: int
     recovery_delay: int
     recovery_rate: int
-    threshold: int
 
     @property
     def shots_before_overheat(self) -> int:

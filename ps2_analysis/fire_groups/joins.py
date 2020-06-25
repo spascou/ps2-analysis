@@ -2,6 +2,7 @@ from typing import Callable
 
 from ps2_census import Collection, Join
 
+# Fire group to fire mode
 fire_group_to_fire_mode_join_factory: Callable[[], Join] = (
     Join(Collection.FIRE_GROUP_TO_FIRE_MODE)
     .list(1)
@@ -19,6 +20,7 @@ fire_mode_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
+# Fire mode to direct damage effect
 fire_mode_to_damage_direct_effect_join_factory: Callable[[], Join] = (
     Join(Collection.EFFECT)
     .on("damage_direct_effect_id")
@@ -33,6 +35,7 @@ fire_mode_to_damage_direct_effect_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
+# Fire mode to indirect damage effect
 fire_mode_to_damage_indirect_effect_join_factory: Callable[[], Join] = (
     Join(Collection.EFFECT)
     .on("damage_indirect_effect_id")
@@ -47,6 +50,22 @@ fire_mode_to_damage_indirect_effect_join_factory: Callable[[], Join] = (
     .get_factory()
 )
 
+# Fire mode to ability
+fire_mode_to_ability_join_factory: Callable[[], Join] = (
+    Join(Collection.ABILITY)
+    .on("ability_id")
+    .to("ability_id")
+    .inject_at("ability")
+    .nest(
+        Join(Collection.ABILITY_TYPE)
+        .on("ability_type_id")
+        .to("ability_type_id")
+        .inject_at("ability_type")
+    )
+    .get_factory()
+)
+
+# Fire mode to projectile
 fire_mode_to_projectile_join_factory: Callable[[], Join] = (
     Join(Collection.FIRE_MODE_TO_PROJECTILE)
     .on("fire_mode_id")
@@ -59,6 +78,7 @@ projectile_join_factory: Callable[[], Join] = (
     Join(Collection.PROJECTILE).inject_at("projectile").get_factory()
 )
 
+# Player state group
 player_state_group_join_factory: Callable[[], Join] = (
     Join(Collection.PLAYER_STATE_GROUP_2)
     .list(1)

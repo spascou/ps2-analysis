@@ -3,9 +3,9 @@ import logging
 import os
 from typing import List, Optional  # , Dict
 
-from ps2_analysis.vehicle_weapons.data_files import update_data_files
-from ps2_analysis.vehicle_weapons.generate import generate_vehicle_weapons
-from ps2_analysis.vehicle_weapons.vehicle_weapon import VehicleWeapon
+from ps2_analysis.weapons.vehicle.data_files import update_data_files
+from ps2_analysis.weapons.vehicle.generate import generate_vehicle_weapons
+from ps2_analysis.weapons.vehicle.vehicle_weapon import VehicleWeapon
 
 logging.basicConfig(level=logging.INFO)
 

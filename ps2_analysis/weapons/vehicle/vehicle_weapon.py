@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from ps2_census.enums import Faction, ItemCategory
 
-from .attachment import Attachment
-from .fire_group import FireGroup
+from ps2_analysis.fire_groups.fire_group import FireGroup
+from ps2_analysis.weapons.attachment import Attachment
 
 
 @dataclass
