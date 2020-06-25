@@ -1,4 +1,4 @@
-from typing import Dict, FrozenSet, List
+from typing import Dict, FrozenSet, List, Set, Tuple
 
 from ps2_census.enums import Faction, ItemCategory
 from slugify import slugify
@@ -102,11 +102,19 @@ def parse_infantry_weapons_data(
             # Attachments
             attachments: List[Attachment] = []
 
+            handled_attachments: Set[Tuple[int, int]] = set()
+
             _at: dict
             for _at in sorted(
                 d.get("item_attachments", []),
                 key=lambda x: get(x, "attachment_item_id", int),
             ):
+                at_item_id: int = get(_at, "item_id", int)
+                at_attachment_item_id: int = get(_at, "attachment_item_id", int)
+
+                if (at_item_id, at_attachment_item_id) in handled_attachments:
+                    continue
+
                 at: dict = _at["item"]
 
                 attachment_effects: List[dict] = []
@@ -145,8 +153,8 @@ def parse_infantry_weapons_data(
                     attachment_effects.append(p_zef)
 
                 attachment: Attachment = Attachment(
-                    item_id=get(at, "item_id", int),
-                    attachment_item_id=get(at, "attachment_item_id", int),
+                    item_id=at_item_id,
+                    attachment_item_id=at_attachment_item_id,
                     name=at["name"]["en"],
                     description=at.get("description", {"en": None})["en"],
                     slug=slugify(at["name"]["en"]),
@@ -157,6 +165,8 @@ def parse_infantry_weapons_data(
                 )
 
                 attachments.append(attachment)
+
+                handled_attachments.add((at_item_id, at_attachment_item_id))
 
             # Infantry weapons
             infantry_weapon: InfantryWeapon = InfantryWeapon(
