@@ -8,6 +8,7 @@ from ps2_analysis.fire_groups.fire_group import FireGroup
 class Attachment:
     # Basic information
     item_id: int
+    attachment_item_id: int
     name: str
     description: Optional[str]
     slug: str

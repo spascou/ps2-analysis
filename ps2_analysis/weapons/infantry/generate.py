@@ -146,6 +146,7 @@ def parse_infantry_weapons_data(
 
                 attachment: Attachment = Attachment(
                     item_id=get(at, "item_id", int),
+                    attachment_item_id=get(at, "attachment_item_id", int),
                     name=at["name"]["en"],
                     description=at.get("description", {"en": None})["en"],
                     slug=slugify(at["name"]["en"]),
