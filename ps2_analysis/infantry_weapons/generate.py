@@ -12,24 +12,24 @@ from ps2_census.enums import (
 )
 from slugify import slugify
 
+from ps2_analysis.fire_groups.ammo import Ammo
+from ps2_analysis.fire_groups.cone_of_fire import ConeOfFire
+from ps2_analysis.fire_groups.damage_profile import DamageLocation, DamageProfile
 from ps2_analysis.fire_groups.data_files import (
     load_data_files as load_fire_groups_data_files,
 )
+from ps2_analysis.fire_groups.fire_group import FireGroup
+from ps2_analysis.fire_groups.fire_mode import FireMode
+from ps2_analysis.fire_groups.fire_timing import FireTiming
+from ps2_analysis.fire_groups.heat import Heat
+from ps2_analysis.fire_groups.projectile import Projectile
+from ps2_analysis.fire_groups.recoil import Recoil
 from ps2_analysis.utils import get, optget
 
-from .ammo import Ammo
 from .attachment import Attachment
-from .cone_of_fire import ConeOfFire
-from .damage_profile import DamageLocation, DamageProfile
 from .data_files import load_data_files as load_infantry_weapons_data_files
 from .data_fixers import FIRE_GROUP_DATA_FIXERS, INFANTRY_WEAPONS_DATA_FIXERS
-from .fire_group import FireGroup
-from .fire_mode import FireMode
-from .fire_timing import FireTiming
-from .heat import Heat
 from .infantry_weapon import InfantryWeapon
-from .projectile import Projectile
-from .recoil import Recoil
 
 EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
     (6008686, 6004198,)  # Grenade printer  # Mystery weapon

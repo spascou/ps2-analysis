@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from .fire_group import FireGroup
+from ps2_analysis.fire_groups.fire_group import FireGroup
 
 
 @dataclass
