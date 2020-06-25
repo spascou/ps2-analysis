@@ -15,9 +15,7 @@ from .data_files import load_data_files as load_infantry_weapons_data_files
 from .data_fixers import INFANTRY_WEAPONS_DATA_FIXERS
 from .infantry_weapon import InfantryWeapon
 
-EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
-    (6008686, 6004198,)  # Grenade printer  # Mystery weapon
-)
+EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset((6004198,))  # Mystery weapon
 
 
 def generate_infantry_weapons(data_files_directory: str) -> List[InfantryWeapon]:
