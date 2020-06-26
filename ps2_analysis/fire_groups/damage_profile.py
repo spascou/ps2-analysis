@@ -42,7 +42,7 @@ class DamageProfile:
     ) -> int:
 
         damage: float
-        if self.damage_range_delta == 0 or distance <= self.max_damage_range:
+        if self.damage_delta == 0 or distance <= self.max_damage_range:
             damage = self.max_damage
         elif distance >= self.min_damage_range:
             damage = self.min_damage
