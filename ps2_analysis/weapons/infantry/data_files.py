@@ -30,6 +30,12 @@ ITEM_CATEGORIES: Set[ItemCategory] = {
     ItemCategory.CROSSBOW,
     ItemCategory.HYBRID_RIFLE,
     ItemCategory.AERIAL_COMBAT_WEAPON,
+    ItemCategory.AA_MAX_RIGHT,
+    ItemCategory.AA_MAX_LEFT,
+    ItemCategory.AV_MAX_RIGHT,
+    ItemCategory.AV_MAX_LEFT,
+    ItemCategory.AI_MAX_RIGHT,
+    ItemCategory.AI_MAX_LEFT,
 }
 
 
