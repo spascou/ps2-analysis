@@ -40,6 +40,6 @@ weapon: Optional[InfantryWeapon] = item_id_idx.get(7256)
 if weapon:
     simulation_chart: altair.HConcatChart = weapon.fire_groups[0].fire_modes[
         1
-    ].generate_altair_simulation(shots=20, runs=100)
+    ].generate_altair_simulation(shots=20, runs=100, recentering=True)
 
     simulation_chart.save(f"{weapon.slug}_simulation.html")

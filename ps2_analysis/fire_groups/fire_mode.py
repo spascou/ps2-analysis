@@ -301,6 +301,9 @@ class FireMode:
         shots: int,
         control_time: int = 0,
         player_state: PlayerState = PlayerState.STANDING,
+        recentering: bool = False,
+        recentering_x_accuracy: float = 0.2,
+        recentering_y_accuracy: float = 0.1,
     ) -> List[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
 
         # Result as a list of time, cursor position tuple and pellets positions tuples
@@ -465,6 +468,17 @@ class FireMode:
 
                         curr_x = 0.0
                         curr_y = 0.0
+
+            # Recentering
+            ############################################################################
+            if recentering is True:
+                if (curr_x, curr_y) != (0.0, 0.0):
+                    curr_x = 0.0 + srandom.uniform(
+                        -recentering_x_accuracy, recentering_x_accuracy
+                    )
+                    curr_y = 0.0 + srandom.uniform(
+                        -recentering_y_accuracy, recentering_y_accuracy
+                    )
 
             # Current result
             ############################################################################
@@ -634,6 +648,9 @@ class FireMode:
         shots: int,
         runs: int,
         control_time: int = 0,
+        recentering: bool = False,
+        recentering_x_accuracy: float = 0.2,
+        recentering_y_accuracy: float = 0.1,
         player_state: PlayerState = PlayerState.STANDING,
     ) -> altair.HConcatChart:
 
@@ -642,7 +659,12 @@ class FireMode:
         simulation: List[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
         for simulation in (
             self.simulate_shots(
-                shots=shots, player_state=player_state, control_time=control_time
+                shots=shots,
+                player_state=player_state,
+                control_time=control_time,
+                recentering=recentering,
+                recentering_x_accuracy=recentering_x_accuracy,
+                recentering_y_accuracy=recentering_y_accuracy,
             )
             for _ in range(runs)
         ):
