@@ -69,6 +69,18 @@ def test_generate_shot_timings():
 
     assert ft.generate_shot_timings(shots=3) == [(0, True), (100, False), (200, False)]
 
+    assert ft.generate_shot_timings(shots=9, auto_burst_length=3, control_time=100) == [
+        (0, True),
+        (100, False),
+        (200, False),
+        (400, True),
+        (500, False),
+        (600, False),
+        (800, True),
+        (900, False),
+        (1000, False),
+    ]
+
     ft.is_automatic = False
     assert ft.generate_shot_timings(shots=3) == [(0, True), (100, True), (200, True)]
 

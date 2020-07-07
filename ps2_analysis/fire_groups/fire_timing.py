@@ -63,7 +63,11 @@ class FireTiming:
             return self.refire_time
 
     def generate_shot_timings(
-        self, shots: int, control_time: int = 0, spool_cold_start: bool = True
+        self,
+        shots: int,
+        control_time: int = 0,
+        auto_burst_length: Optional[int] = None,
+        spool_cold_start: bool = True,
     ) -> List[Tuple[int, bool]]:
 
         time: int = self.total_delay
@@ -103,9 +107,24 @@ class FireTiming:
                     time += control_time
                     time += self.refire_time + self.total_delay
 
-            # (Semi-)automatic or manual action weapon
+            # Manually bursting automatic weapon
+            elif auto_burst_length and auto_burst_length > 1 and control_time:
+
+                if burst_fired_shots < auto_burst_length - 1:
+
+                    burst_fired_shots += 1
+                    time += self.refire_time
+
+                else:
+
+                    first = True
+                    burst_fired_shots = 0
+                    time += control_time
+                    time += self.refire_time
+
             else:
 
+                # (Semi-)automatic or manual action weapon
                 if not self.is_automatic:
 
                     first = True
