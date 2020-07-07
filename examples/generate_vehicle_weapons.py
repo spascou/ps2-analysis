@@ -1,7 +1,6 @@
-# import json
 import logging
 import os
-from typing import List, Optional  # , Dict
+from typing import List, Optional
 
 from ps2_analysis.weapons.vehicle.data_files import update_data_files
 from ps2_analysis.weapons.vehicle.generate import generate_vehicle_weapons
@@ -22,11 +21,3 @@ update_data_files(
 vehicle_weapons: List[VehicleWeapon] = generate_vehicle_weapons(
     data_files_directory=DATAFILES_DIRECTORY
 )
-
-# item_id_idx: Dict[int, VehicleWeapon] = {w.item_id: w for w in vehicle_weapons}
-
-# print(
-#     json.dumps(
-#         {i.name: i.category.name for i in vehicle_weapons}, sort_keys=True, indent=2
-#     )
-# )

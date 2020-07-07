@@ -1,6 +1,8 @@
 import logging
 import os
-from typing import List, Optional
+from typing import Dict, List, Optional
+
+import altair
 
 from ps2_analysis.fire_groups.data_files import (
     update_data_files as update_fire_groups_data_files,
@@ -30,3 +32,14 @@ update_infantry_weapons_data_files(
 infantry_weapons: List[InfantryWeapon] = generate_infantry_weapons(
     data_files_directory=DATAFILES_DIRECTORY
 )
+
+item_id_idx: Dict[int, InfantryWeapon] = {w.item_id: w for w in infantry_weapons}
+
+weapon: Optional[InfantryWeapon] = item_id_idx.get(7256)
+
+if weapon:
+    simulation_chart: altair.HConcatChart = weapon.fire_groups[0].fire_modes[
+        1
+    ].generate_altair_simulation(shots=20, runs=100)
+
+    simulation_chart.save(f"{weapon.slug}_simulation.html")

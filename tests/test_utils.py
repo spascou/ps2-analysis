@@ -1,4 +1,4 @@
-from ps2_analysis.utils import discover, get, optget
+from ps2_analysis.utils import discover, float_range, get, optget
 
 
 def test_discover():
@@ -34,3 +34,13 @@ def test_get():
 def test_optget():
     assert optget({"a": "1.2"}, "b", float) is None
     assert optget({"a": "1.2"}, "b", float, "default") == "default"
+
+
+def test_float_range():
+    assert list(float_range(start=1.0, stop=1.5, step=0.1, precision_decimals=2)) == [
+        1.0,
+        1.1,
+        1.2,
+        1.3,
+        1.4,
+    ]
