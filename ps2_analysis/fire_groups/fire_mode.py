@@ -302,8 +302,8 @@ class FireMode:
         control_time: int = 0,
         player_state: PlayerState = PlayerState.STANDING,
         recentering: bool = False,
-        recentering_x_accuracy: float = 0.2,
-        recentering_y_accuracy: float = 0.1,
+        recentering_response_time: int = 500,
+        recentering_inertia_factor: float = 0.7,
     ) -> List[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
 
         # Result as a list of time, cursor position tuple and pellets positions tuples
@@ -345,6 +345,9 @@ class FireMode:
 
         # Loop
         previous_t: int = 0
+
+        # Recentering
+        recentering_vectors: List[Tuple[int, Tuple[float, float]]] = []
 
         t: int
         b: bool
@@ -472,13 +475,38 @@ class FireMode:
             # Recentering
             ############################################################################
             if recentering is True:
+
+                # Cursor not centered; applying recentering
                 if (curr_x, curr_y) != (0.0, 0.0):
-                    curr_x = 0.0 + srandom.uniform(
-                        -recentering_x_accuracy, recentering_x_accuracy
+
+                    # Compute average recentering inertia vector
+                    recentering_inertia_vectors: List[Tuple[float, float]] = [
+                        k[1]
+                        for k in filter(
+                            lambda v: v[0] >= t - recentering_response_time,
+                            recentering_vectors,
+                        )
+                    ]
+
+                    recentering_average_inertia_x, recentering_average_inertia_y = [
+                        sum(z) / len(z) for z in zip(*recentering_inertia_vectors)
+                    ] or [0.0, 0.0]
+
+                    # Compute recentering vector as half sum of current cursor position
+                    # and average recentering inertia vector
+                    recentering_x: float = (
+                        (recentering_inertia_factor * recentering_average_inertia_x)
+                        - ((1 - recentering_inertia_factor) * curr_x)
                     )
-                    curr_y = 0.0 + srandom.uniform(
-                        -recentering_y_accuracy, recentering_y_accuracy
+                    recentering_y: float = (
+                        (recentering_inertia_factor * recentering_average_inertia_y)
+                        - ((1 - recentering_inertia_factor) * curr_y)
                     )
+
+                    recentering_vectors.append((t, (recentering_x, recentering_y)))
+
+                    curr_x += recentering_x
+                    curr_y += recentering_y
 
             # Current result
             ############################################################################
@@ -649,8 +677,8 @@ class FireMode:
         runs: int,
         control_time: int = 0,
         recentering: bool = False,
-        recentering_x_accuracy: float = 0.2,
-        recentering_y_accuracy: float = 0.1,
+        recentering_response_time: int = 500,
+        recentering_inertia_factor: float = 0.3,
         player_state: PlayerState = PlayerState.STANDING,
     ) -> altair.HConcatChart:
 
@@ -660,11 +688,11 @@ class FireMode:
         for simulation in (
             self.simulate_shots(
                 shots=shots,
-                player_state=player_state,
                 control_time=control_time,
                 recentering=recentering,
-                recentering_x_accuracy=recentering_x_accuracy,
-                recentering_y_accuracy=recentering_y_accuracy,
+                recentering_response_time=recentering_response_time,
+                recentering_inertia_factor=recentering_inertia_factor,
+                player_state=player_state,
             )
             for _ in range(runs)
         ):
