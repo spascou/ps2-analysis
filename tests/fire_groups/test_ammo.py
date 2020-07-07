@@ -1,4 +1,4 @@
-from ps2_analysis.infantry_weapons.ammo import Ammo
+from ps2_analysis.fire_groups.ammo import Ammo
 
 
 def test_shots_per_clip():
@@ -12,7 +12,6 @@ def test_shots_per_clip():
         reload_chamber_time=0,
         loop_start_time=None,
         loop_end_time=None,
-        can_chamber_in_ads=None,
     )
 
     assert ammo.shots_per_clip == 10
@@ -33,7 +32,6 @@ def test_long_reload_time():
         reload_chamber_time=10,
         loop_start_time=None,
         loop_end_time=None,
-        can_chamber_in_ads=None,
     )
 
     assert ammo.long_reload_time == 110

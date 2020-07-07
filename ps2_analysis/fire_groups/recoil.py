@@ -35,7 +35,7 @@ class Recoil:
     @property
     def half_horizontal_tolerance(self) -> Optional[float]:
 
-        if self.horizontal_tolerance:
+        if self.horizontal_tolerance is not None:
 
             res = self.horizontal_tolerance / 2
 
@@ -48,9 +48,9 @@ class Recoil:
     @property
     def max_tolerated_horizontal_kicks(self) -> Optional[int]:
 
-        if self.half_horizontal_tolerance:
+        if self.half_horizontal_tolerance is not None:
 
-            if self.min_horizontal and self.min_horizontal > 0:
+            if self.min_horizontal is not None and self.min_horizontal > 0:
 
                 return (
                     int(
@@ -70,7 +70,10 @@ class Recoil:
     @property
     def max_horizontal_deviation(self) -> Optional[float]:
 
-        if self.max_horizontal and self.max_tolerated_horizontal_kicks:
+        if (
+            self.max_horizontal is not None
+            and self.max_tolerated_horizontal_kicks is not None
+        ):
 
             res = self.max_tolerated_horizontal_kicks * self.max_horizontal * 2
 
@@ -81,9 +84,22 @@ class Recoil:
             return None
 
     @property
+    def angle_delta(self) -> Optional[float]:
+
+        if self.min_angle is not None and self.max_angle is not None:
+
+            res = self.max_angle - self.min_angle
+
+            return res
+
+        else:
+
+            return None
+
+    @property
     def horizontal_delta(self) -> Optional[float]:
 
-        if self.max_horizontal and self.min_horizontal:
+        if self.max_horizontal is not None and self.min_horizontal is not None:
 
             res = self.max_horizontal - self.min_horizontal
 
@@ -96,7 +112,7 @@ class Recoil:
     @property
     def vertical_delta(self) -> Optional[float]:
 
-        if self.max_vertical and self.min_vertical:
+        if self.max_vertical is not None and self.min_vertical is not None:
 
             res = self.max_vertical - self.min_vertical
 

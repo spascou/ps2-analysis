@@ -1,4 +1,4 @@
-from ps2_analysis.infantry_weapons.heat import Heat
+from ps2_analysis.fire_groups.heat import Heat
 
 
 def test_shots_before_overheat():
@@ -8,7 +8,6 @@ def test_shots_before_overheat():
         overheat_penalty_time=0,
         recovery_delay=0,
         recovery_rate=0,
-        threshold=0,
     )
 
     assert heat.shots_before_overheat == 11
@@ -25,7 +24,6 @@ def test_shots_to_overheat():
         overheat_penalty_time=0,
         recovery_delay=0,
         recovery_rate=0,
-        threshold=0,
     )
 
     assert heat.shots_to_overheat == 12
@@ -42,7 +40,6 @@ def test_recovery_time():
         overheat_penalty_time=0,
         recovery_delay=5,
         recovery_rate=100_000,
-        threshold=0,
     )
 
     assert heat.recovery_time(1000) == 15
@@ -60,7 +57,6 @@ def test_full_recovery_time():
         overheat_penalty_time=0,
         recovery_delay=5,
         recovery_rate=100_000,
-        threshold=0,
     )
 
     assert heat.full_recovery_time == heat.recovery_time(1000)
@@ -73,7 +69,6 @@ def test_overheat_recovery_time():
         overheat_penalty_time=15,
         recovery_delay=5,
         recovery_rate=100_000,
-        threshold=0,
     )
 
     assert heat.overheat_recovery_time == 15 + heat.full_recovery_time

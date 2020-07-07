@@ -1,4 +1,4 @@
-from ps2_analysis.infantry_weapons.fire_timing import FireTiming
+from ps2_analysis.fire_groups.fire_timing import FireTiming
 
 
 def test_total_delay():

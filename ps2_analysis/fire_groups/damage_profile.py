@@ -31,10 +31,12 @@ class DamageProfile:
 
     @property
     def damage_delta(self) -> int:
+
         return self.max_damage - self.min_damage
 
     @property
     def damage_range_delta(self) -> float:
+
         return self.min_damage_range - self.max_damage_range
 
     def damage_per_pellet(
@@ -42,11 +44,17 @@ class DamageProfile:
     ) -> int:
 
         damage: float
+
         if self.damage_delta == 0 or distance <= self.max_damage_range:
+
             damage = self.max_damage
+
         elif distance >= self.min_damage_range:
+
             damage = self.min_damage
+
         else:
+
             damage = self.min_damage * (
                 1
                 - (distance - self.min_damage_range)
@@ -78,12 +86,15 @@ class DamageProfile:
         dps: int = self.damage_per_shot(distance=distance, location=location)
 
         if dps > 0:
+
             return int(
                 math.ceil(
                     (health + shields) / (math.ceil(dps * (1 - damage_resistance)))
                 )
             )
+
         else:
+
             return 0
 
     def shots_to_kill_ranges(

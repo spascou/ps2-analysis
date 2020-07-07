@@ -1,12 +1,15 @@
+import math
 import random
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from ps2_census.enums import FireModeType, PlayerState
 
+from ps2_analysis.utils import float_range
+
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
-from .damage_profile import DamageProfile
+from .damage_profile import DamageLocation, DamageProfile
 from .fire_timing import FireTiming
 from .heat import Heat
 from .projectile import Projectile
@@ -62,6 +65,144 @@ class FireMode:
     # Player state can ads
     player_state_can_ads: Dict[PlayerState, bool]
 
+    def damage_per_pellet(
+        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+    ) -> int:
+
+        direct_damage: int = 0
+
+        if self.direct_damage_profile:
+
+            direct_damage = self.direct_damage_profile.damage_per_pellet(
+                distance=distance, location=location
+            )
+
+        indirect_damage: int = 0
+
+        if self.indirect_damage_profile:
+
+            indirect_damage = self.indirect_damage_profile.damage_per_pellet(
+                distance=0, location=location
+            )
+
+        return direct_damage + indirect_damage
+
+    def damage_per_shot(
+        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+    ) -> int:
+
+        direct_damage: int = 0
+
+        if self.direct_damage_profile:
+
+            direct_damage = self.direct_damage_profile.damage_per_shot(
+                distance=distance, location=location
+            )
+
+        indirect_damage: int = 0
+
+        if self.indirect_damage_profile:
+
+            indirect_damage = self.indirect_damage_profile.damage_per_shot(
+                distance=0, location=location
+            )
+
+        return direct_damage + indirect_damage
+
+    def shots_to_kill(
+        self,
+        distance: float,
+        location: DamageLocation = DamageLocation.TORSO,
+        health: int = 500,
+        shields: int = 500,
+        damage_resistance: float = 0.0,
+    ) -> int:
+
+        dps: int = self.damage_per_shot(distance=distance, location=location)
+
+        if dps > 0:
+
+            return int(
+                math.ceil(
+                    (health + shields) / (math.ceil(dps * (1 - damage_resistance)))
+                )
+            )
+
+        else:
+
+            return 0
+
+    def shots_to_kill_ranges(
+        self,
+        location: DamageLocation = DamageLocation.TORSO,
+        health: int = 500,
+        shields: int = 500,
+        damage_resistance: float = 0.0,
+        step: float = 0.1,
+        precision_decimals: int = 2,
+    ) -> List[Tuple[float, int]]:
+
+        stk_ranges: List[Tuple[float, int]] = []
+
+        if self.direct_damage_profile:
+            if self.direct_damage_profile.damage_range_delta > 0:
+                previous_stk: Optional[int] = None
+
+                for r in float_range(
+                    0,
+                    self.direct_damage_profile.min_damage_range + step,
+                    step,
+                    precision_decimals,
+                ):
+                    stk: int = self.shots_to_kill(
+                        distance=r,
+                        location=location,
+                        health=health,
+                        shields=shields,
+                        damage_resistance=damage_resistance,
+                    )
+
+                    if previous_stk is None or stk != previous_stk:
+                        if r >= step:
+                            stk_ranges.append(
+                                (round(r - step, precision_decimals), stk)
+                            )
+                        else:
+                            stk_ranges.append((r, stk))
+
+                    previous_stk = stk
+            else:
+
+                stk_ranges.append(
+                    (
+                        0.0,
+                        self.shots_to_kill(
+                            distance=self.direct_damage_profile.max_damage_range,
+                            location=location,
+                            health=health,
+                            shields=shields,
+                            damage_resistance=damage_resistance,
+                        ),
+                    )
+                )
+
+        elif self.indirect_damage_profile:
+
+            stk_ranges.append(
+                (
+                    0.0,
+                    self.shots_to_kill(
+                        distance=0,
+                        location=location,
+                        health=health,
+                        shields=shields,
+                        damage_resistance=damage_resistance,
+                    ),
+                )
+            )
+
+        return stk_ranges
+
     @property
     def max_consecutive_shots(self) -> int:
 
@@ -102,7 +243,9 @@ class FireMode:
 
         return reload_time
 
-    def generate_real_shot_timings(self, shots=int) -> List[Tuple[int, bool]]:
+    def generate_real_shot_timings(
+        self, shots=int, control_time: int = 0
+    ) -> List[Tuple[int, bool]]:
 
         shot_timings: List[Tuple[int, bool]] = []
 
@@ -111,7 +254,9 @@ class FireMode:
 
         if remainder == 0:
 
-            shot_timings = self.fire_timing.generate_shot_timings(shots=shots)
+            shot_timings = self.fire_timing.generate_shot_timings(
+                shots=shots, control_time=control_time
+            )
 
         else:
 
@@ -121,7 +266,9 @@ class FireMode:
 
                     shot_timings += [
                         (t + reloads * self.reload_time, b)
-                        for t, b in self.fire_timing.generate_shot_timings(shots=shots)
+                        for t, b in self.fire_timing.generate_shot_timings(
+                            shots=shots, control_time=control_time
+                        )
                     ]
 
                     break
@@ -131,7 +278,7 @@ class FireMode:
                     shot_timings += [
                         (t + reloads * self.reload_time, b)
                         for t, b in self.fire_timing.generate_shot_timings(
-                            shots=self.max_consecutive_shots
+                            shots=self.max_consecutive_shots, control_time=control_time
                         )
                     ]
 

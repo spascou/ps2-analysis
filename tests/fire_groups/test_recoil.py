@@ -1,4 +1,4 @@
-from ps2_analysis.infantry_weapons.recoil import Recoil
+from ps2_analysis.fire_groups.recoil import Recoil
 
 
 def test_half_horizontal_tolerance():
@@ -145,6 +145,48 @@ def test_max_horizontal_deviation():
     )
 
     assert recoil.max_horizontal_deviation is None
+
+
+def test_angle_delta():
+    recoil: Recoil = Recoil(
+        max_angle=10.0,
+        min_angle=7.0,
+        max_vertical=0.0,
+        min_vertical=0.0,
+        vertical_increase=0.0,
+        vertical_crouched_increase=0.0,
+        max_horizontal=4.0,
+        min_horizontal=1.0,
+        horizontal_tolerance=0,
+        max_horizontal_increase=0.0,
+        min_horizontal_increase=0.0,
+        recovery_acceleration=0.0,
+        recovery_delay=0.0,
+        recovery_rate=0.0,
+        first_shot_multiplier=1.0,
+    )
+
+    assert recoil.horizontal_delta == 3.0
+
+    recoil: Recoil = Recoil(
+        max_angle=0.0,
+        min_angle=0.0,
+        max_vertical=0.0,
+        min_vertical=0.0,
+        vertical_increase=0.0,
+        vertical_crouched_increase=0.0,
+        max_horizontal=0.0,
+        min_horizontal=0.0,
+        horizontal_tolerance=0,
+        max_horizontal_increase=0.0,
+        min_horizontal_increase=0.0,
+        recovery_acceleration=0.0,
+        recovery_delay=0.0,
+        recovery_rate=0.0,
+        first_shot_multiplier=1.0,
+    )
+
+    assert recoil.angle_delta == 0.0
 
 
 def test_horizontal_delta():
