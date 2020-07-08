@@ -128,7 +128,7 @@ class FireMode:
 
         dps: int = self.damage_per_shot(distance=distance, location=location)
 
-        if dps > 0:
+        if dps > 0 and damage_resistance < 1.0:
 
             return int(
                 math.ceil(

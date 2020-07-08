@@ -25,7 +25,15 @@ class Heat:
 
     def recovery_time(self, heat: int) -> int:
 
-        return self.recovery_delay + int(math.ceil(heat / (self.recovery_rate / 1000)))
+        if self.recovery_rate > 0:
+
+            return self.recovery_delay + int(
+                math.ceil(heat / (self.recovery_rate / 1000))
+            )
+
+        else:
+
+            return 0
 
     @property
     def full_recovery_time(self) -> int:
