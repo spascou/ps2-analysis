@@ -132,5 +132,3 @@ dmypy.json
 examples/datafiles/*
 # Plots
 examples/plots/*
-
-node_modules/

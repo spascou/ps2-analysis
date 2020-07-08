@@ -41,6 +41,7 @@ def test_damage_per_pellet():
     )
 
     fm: FireMode = FireMode(
+        fire_mode_id=0,
         type=FireModeType.IRON_SIGHT,
         description="",
         is_ads=True,
@@ -126,6 +127,7 @@ def test_damage_per_shot():
     )
 
     fm: FireMode = FireMode(
+        fire_mode_id=0,
         type=FireModeType.IRON_SIGHT,
         description="",
         is_ads=True,
@@ -211,6 +213,7 @@ def test_shots_to_kill():
     )
 
     fm: FireMode = FireMode(
+        fire_mode_id=0,
         type=FireModeType.IRON_SIGHT,
         description="",
         is_ads=True,
@@ -296,6 +299,7 @@ def test_shots_to_kill_ranges():
     )
 
     fm: FireMode = FireMode(
+        fire_mode_id=0,
         type=FireModeType.IRON_SIGHT,
         description="",
         is_ads=True,
@@ -409,6 +413,7 @@ def test_simulate_shots():
     )
 
     fm: FireMode = FireMode(
+        fire_mode_id=0,
         type=FireModeType.IRON_SIGHT,
         description="",
         is_ads=True,

@@ -3,7 +3,6 @@ import os
 from typing import Dict, List, Optional
 
 import altair
-from altair_saver import save
 
 from ps2_analysis.fire_groups.data_files import (
     update_data_files as update_fire_groups_data_files,
@@ -46,16 +45,8 @@ if weapon:
 
         for fire_mode in fire_group.fire_modes:
 
-            chart = fire_mode.generate_altair_simulation(
+            fire_mode.generate_altair_simulation(
                 shots=fire_mode.max_consecutive_shots, runs=10, recentering=False
-            )
-
-            save(
-                chart,
-                f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.png",
-            )
-
-            save(
-                chart,
-                f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.svg",
+            ).save(
+                f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.html"
             )
