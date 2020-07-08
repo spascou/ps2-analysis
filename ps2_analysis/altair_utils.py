@@ -52,7 +52,7 @@ def dark_theme():
 
     return {
         "config": {
-            "background": "#333",
+            "background": "#343c3d",
             "title": {"color": lightColor},
             "style": {
                 "guide-label": {"fill": lightColor},
