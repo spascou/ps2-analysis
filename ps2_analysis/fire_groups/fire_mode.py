@@ -28,6 +28,7 @@ srandom = random.SystemRandom()
 @dataclass
 class FireMode:
     # Basic information
+    fire_mode_id: int
     type: FireModeType
     description: str
     is_ads: bool
@@ -729,8 +730,12 @@ class FireMode:
             altair.Chart(dataset)
             .mark_point()
             .encode(
-                x=altair.X(f"{X}:Q", axis=altair.Axis(title="horizontal angle")),
-                y=altair.Y(f"{Y}:Q", axis=altair.Axis(title="vertical angle")),
+                x=altair.X(
+                    f"{X}:Q", axis=altair.Axis(title="horizontal angle (degrees)")
+                ),
+                y=altair.Y(
+                    f"{Y}:Q", axis=altair.Axis(title="vertical angle (degrees)")
+                ),
                 color=SIMULATION_POINT_TYPE_COLOR,
                 tooltip="Time:Q",
             )

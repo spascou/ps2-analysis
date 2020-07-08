@@ -20,6 +20,7 @@ keywords = []
 python = "^3.8"
 toml = "^0.9"
 altair = "^4.1"
+altair-saver = "^0.5"
 ndjson = "^0.3"
 ps2-census = "^0.12"
 python-slugify = "^4.0"

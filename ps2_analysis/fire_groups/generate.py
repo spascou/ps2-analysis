@@ -147,6 +147,7 @@ def parse_fire_group_data(
             # Fire Mode
             fire_mode: FireMode = FireMode(
                 # Basic information
+                fire_mode_id=get(fm, "fire_mode_id", int),
                 type=FireModeType(get(fm, "fire_mode_type_id", int)),
                 description=fm["description"]["en"] if "description" in fm else "",
                 is_ads=optget(fm, "iron_sights", lambda x: int(x) == 1, False),
