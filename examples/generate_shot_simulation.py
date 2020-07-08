@@ -33,7 +33,7 @@ infantry_weapons: List[InfantryWeapon] = generate_infantry_weapons(
 
 item_id_idx: Dict[int, InfantryWeapon] = {w.item_id: w for w in infantry_weapons}
 
-weapon: Optional[InfantryWeapon] = item_id_idx.get(7256)
+weapon: Optional[InfantryWeapon] = item_id_idx.get(43)
 
 if weapon:
     weapon.fire_groups[0].fire_modes[1].generate_altair_simulation(

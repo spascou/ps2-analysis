@@ -596,32 +596,6 @@ class FireMode:
                     curr_min_horizontal_recoil, curr_max_horizontal_recoil
                 )
 
-            # Horizontal recoil direction
-            recoil_h_direction: Literal[-1, 1]
-            recoil_h_choices: Tuple[Literal[-1, 1], Literal[-1, 1]] = (-1, 1)
-
-            if recoil.half_horizontal_tolerance:
-
-                if abs(curr_x) <= recoil.half_horizontal_tolerance:
-
-                    recoil_h_direction = srandom.choice(recoil_h_choices)
-
-                else:
-
-                    if curr_x > 0:
-
-                        recoil_h_direction = -1
-
-                    else:
-
-                        recoil_h_direction = 1
-
-            else:
-
-                recoil_h_direction = srandom.choice(recoil_h_choices)
-
-            recoil_h *= recoil_h_direction
-
             # Recoil angle
             recoil_a: float
 
@@ -640,6 +614,42 @@ class FireMode:
             else:
 
                 recoil_a = srandom.uniform(recoil.min_angle, recoil.max_angle)
+
+            # Horizontal recoil direction
+            recoil_h_direction: Literal[-1, 1]
+            recoil_h_choices: Tuple[Literal[-1, 1], Literal[-1, 1]] = (-1, 1)
+
+            if recoil.half_horizontal_tolerance:
+
+                left_bound: float = (
+                    (curr_y - recoil.half_horizontal_tolerance)
+                    / math.tan(math.radians(90 - recoil_a))
+                ) if recoil_a != 0.0 else -recoil.half_horizontal_tolerance
+
+                right_bound: float = (
+                    (curr_y + recoil.half_horizontal_tolerance)
+                    / math.tan(math.radians(90 - recoil_a))
+                ) if recoil_a != 0.0 else recoil.half_horizontal_tolerance
+
+                if left_bound <= curr_x <= right_bound:
+
+                    recoil_h_direction = srandom.choice(recoil_h_choices)
+
+                else:
+
+                    if curr_x > right_bound:
+
+                        recoil_h_direction = -1
+
+                    else:
+
+                        recoil_h_direction = 1
+
+            else:
+
+                recoil_h_direction = srandom.choice(recoil_h_choices)
+
+            recoil_h *= recoil_h_direction
 
             # Angle horizontal and vertical recoil
             recoil_h_angled: float
