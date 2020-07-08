@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Dict, List, Optional
 
+import altair
 from altair_saver import save
 
 from ps2_analysis.fire_groups.data_files import (
@@ -37,6 +38,8 @@ item_id_idx: Dict[int, InfantryWeapon] = {w.item_id: w for w in infantry_weapons
 
 weapon: Optional[InfantryWeapon] = item_id_idx.get(43)
 
+altair.themes.enable("dark")
+
 if weapon:
 
     for fire_group in weapon.fire_groups:
@@ -50,4 +53,9 @@ if weapon:
             save(
                 chart,
                 f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.png",
+            )
+
+            save(
+                chart,
+                f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.svg",
             )

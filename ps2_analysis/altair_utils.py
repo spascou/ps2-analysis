@@ -44,3 +44,27 @@ SIMULATION_POINT_TYPE_COLOR = altair.condition(
     ),
     altair.value("lightgray"),
 )
+
+
+def dark_theme():
+    lightColor: str = "#fff"
+    medColor: str = "#888"
+
+    return {
+        "config": {
+            "background": "#333",
+            "title": {"color": lightColor},
+            "style": {
+                "guide-label": {"fill": lightColor},
+                "guide-title": {"fill": lightColor},
+            },
+            "axis": {
+                "domainColor": lightColor,
+                "gridColor": medColor,
+                "tickColor": lightColor,
+            },
+        }
+    }
+
+
+altair.themes.register("dark", dark_theme)
