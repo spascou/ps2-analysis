@@ -256,6 +256,7 @@ class FireMode:
 
         shots: int
         time: int
+        spm: int
 
         if (
             self.fire_timing.burst_length
@@ -278,7 +279,13 @@ class FireMode:
             shots = 1
             time = self.fire_timing.total_delay + self.reload_time
 
-        spm: int = int(math.floor(60_000 * shots / time))
+        if time > 0:
+
+            spm = int(math.floor(60_000 * shots / time))
+
+        else:
+
+            spm = 0
 
         return spm
 
