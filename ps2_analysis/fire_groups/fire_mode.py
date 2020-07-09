@@ -277,7 +277,11 @@ class FireMode:
         else:
 
             shots = 1
-            time = self.fire_timing.total_delay + self.reload_time
+            time = (
+                self.fire_timing.total_delay
+                + self.fire_timing.refire_time
+                + (self.fire_timing.chamber_time or 0)
+            )
 
         if time > 0:
 
