@@ -16,7 +16,13 @@ class Heat:
     @property
     def shots_before_overheat(self) -> int:
 
-        return int(math.floor(self.total_capacity / self.heat_per_shot))
+        if self.heat_per_shot > 0:
+
+            return int(math.floor(self.total_capacity / self.heat_per_shot))
+
+        else:
+
+            return 0
 
     @property
     def shots_to_overheat(self) -> int:

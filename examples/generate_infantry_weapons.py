@@ -30,3 +30,9 @@ update_infantry_weapons_data_files(
 infantry_weapons: List[InfantryWeapon] = generate_infantry_weapons(
     data_files_directory=DATAFILES_DIRECTORY
 )
+
+infantry_weapons_idx = {w.item_id: w for w in infantry_weapons}
+
+trac_5 = infantry_weapons_idx[43]
+
+print(f"{trac_5.name}: {trac_5.fire_groups[0].fire_modes[0].shots_per_minute}")
