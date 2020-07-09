@@ -180,6 +180,150 @@ def test_damage_per_shot():
     assert fm.damage_per_shot(300) == 550
 
 
+def test_shots_per_minute():
+    rc: Recoil = Recoil(
+        max_angle=0.0,
+        min_angle=0.0,
+        max_vertical=0.0,
+        min_vertical=0.0,
+        vertical_increase=0.0,
+        vertical_crouched_increase=0.0,
+        max_horizontal=0.0,
+        min_horizontal=0.0,
+        horizontal_tolerance=0.0,
+        max_horizontal_increase=0.0,
+        min_horizontal_increase=0.0,
+        recovery_acceleration=0.0,
+        recovery_delay=0.0,
+        recovery_rate=0.0,
+        first_shot_multiplier=1.0,
+    )
+
+    am: Ammo = Ammo(
+        clip_size=10,
+        total_capacity=100,
+        ammo_per_shot=1,
+        block_auto=None,
+        continuous=None,
+        short_reload_time=1000,
+        reload_chamber_time=0,
+        loop_start_time=None,
+        loop_end_time=None,
+    )
+
+    ft: FireTiming = FireTiming(
+        is_automatic=True,
+        refire_time=80,
+        fire_duration=None,
+        burst_length=None,
+        burst_refire_time=None,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=None,
+    )
+
+    fm: FireMode = FireMode(
+        fire_mode_id=0,
+        type=FireModeType.IRON_SIGHT,
+        description="",
+        is_ads=True,
+        detect_range=30.0,
+        move_multiplier=1.0,
+        turn_multiplier=1.0,
+        direct_damage_profile=None,
+        indirect_damage_profile=None,
+        zoom=1.5,
+        sway_can_steady=None,
+        sway_amplitude_x=None,
+        sway_amplitude_y=None,
+        sway_period_x=None,
+        sway_period_y=None,
+        ammo=am,
+        heat=None,
+        fire_timing=ft,
+        recoil=rc,
+        projectile=None,
+        player_state_cone_of_fire={},
+        player_state_can_ads={},
+    )
+
+    assert fm.shots_per_minute == 750
+
+    fm.fire_timing = FireTiming(
+        is_automatic=True,
+        refire_time=80,
+        fire_duration=None,
+        burst_length=3,
+        burst_refire_time=80,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=None,
+    )
+
+    assert fm.shots_per_minute == 750
+
+    fm.fire_timing = FireTiming(
+        is_automatic=False,
+        refire_time=180,
+        fire_duration=None,
+        burst_length=None,
+        burst_refire_time=None,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=None,
+    )
+
+    assert fm.shots_per_minute == 333
+
+    fm.fire_timing = FireTiming(
+        is_automatic=False,
+        refire_time=170,
+        fire_duration=None,
+        burst_length=None,
+        burst_refire_time=None,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=1500,
+    )
+
+    assert fm.shots_per_minute == 35
+
+    fm.fire_timing = FireTiming(
+        is_automatic=False,
+        refire_time=0,
+        fire_duration=None,
+        burst_length=None,
+        burst_refire_time=None,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=0,
+    )
+
+    fm.ammo = Ammo(
+        clip_size=1,
+        total_capacity=100,
+        ammo_per_shot=1,
+        block_auto=None,
+        continuous=None,
+        short_reload_time=1000,
+        reload_chamber_time=0,
+        loop_start_time=None,
+        loop_end_time=None,
+    )
+
+    assert fm.shots_per_minute == 60
+
+
 def test_shots_to_kill():
     ft: FireTiming = FireTiming(
         is_automatic=True,

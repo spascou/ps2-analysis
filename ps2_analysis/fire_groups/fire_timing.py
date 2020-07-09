@@ -62,26 +62,6 @@ class FireTiming:
 
             return self.refire_time
 
-    @property
-    def shots_per_minute(self) -> int:
-
-        shots: int
-        time: int
-
-        if self.burst_length and self.burst_length > 1 and self.burst_refire_time:
-
-            shots = self.burst_length
-            time = (shots - 1) * self.burst_refire_time + self.refire_time
-
-        else:
-
-            shots = 1
-            time = self.refire_time + (self.chamber_time or 0)
-
-        spm: int = int(math.floor(60_000 * shots / time))
-
-        return spm
-
     def generate_shot_timings(
         self,
         shots: int,

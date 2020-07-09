@@ -53,68 +53,6 @@ def test_spooling_refire_time():
     assert ft.spooling_refire_time(2000) == 90
 
 
-def test_shots_per_minute():
-    ft: FireTiming = FireTiming(
-        is_automatic=True,
-        refire_time=80,
-        fire_duration=None,
-        burst_length=None,
-        burst_refire_time=None,
-        delay=0,
-        charge_up_time=0,
-        spool_up_time=None,
-        spool_up_initial_refire_time=None,
-        chamber_time=None,
-    )
-
-    assert ft.shots_per_minute == 750
-
-    ft: FireTiming = FireTiming(
-        is_automatic=True,
-        refire_time=80,
-        fire_duration=None,
-        burst_length=3,
-        burst_refire_time=80,
-        delay=0,
-        charge_up_time=0,
-        spool_up_time=None,
-        spool_up_initial_refire_time=None,
-        chamber_time=None,
-    )
-
-    assert ft.shots_per_minute == 750
-
-    ft: FireTiming = FireTiming(
-        is_automatic=False,
-        refire_time=180,
-        fire_duration=None,
-        burst_length=None,
-        burst_refire_time=None,
-        delay=0,
-        charge_up_time=0,
-        spool_up_time=None,
-        spool_up_initial_refire_time=None,
-        chamber_time=None,
-    )
-
-    assert ft.shots_per_minute == 333
-
-    ft: FireTiming = FireTiming(
-        is_automatic=False,
-        refire_time=170,
-        fire_duration=None,
-        burst_length=None,
-        burst_refire_time=None,
-        delay=0,
-        charge_up_time=0,
-        spool_up_time=None,
-        spool_up_initial_refire_time=None,
-        chamber_time=1500,
-    )
-
-    assert ft.shots_per_minute == 35
-
-
 def test_generate_shot_timings():
     ft: FireTiming = FireTiming(
         is_automatic=True,

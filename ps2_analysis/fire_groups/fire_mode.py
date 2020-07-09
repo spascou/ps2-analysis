@@ -251,6 +251,37 @@ class FireMode:
 
         return reload_time
 
+    @property
+    def shots_per_minute(self) -> int:
+
+        shots: int
+        time: int
+
+        if (
+            self.fire_timing.burst_length
+            and self.fire_timing.burst_length > 1
+            and self.fire_timing.burst_refire_time
+        ):
+
+            shots = self.fire_timing.burst_length
+            time = (
+                shots - 1
+            ) * self.fire_timing.burst_refire_time + self.fire_timing.refire_time
+
+        elif self.max_consecutive_shots > 1:
+
+            shots = 1
+            time = self.fire_timing.refire_time + (self.fire_timing.chamber_time or 0)
+
+        else:
+
+            shots = 1
+            time = self.fire_timing.total_delay + self.reload_time
+
+        spm: int = int(math.floor(60_000 * shots / time))
+
+        return spm
+
     def generate_real_shot_timings(
         self, shots=int, control_time: int = 0
     ) -> List[Tuple[int, bool]]:
