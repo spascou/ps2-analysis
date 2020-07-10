@@ -764,7 +764,7 @@ class FireMode:
         self,
         distance: float = 1.0,
         runs: int = 1,
-        max_time: int = 15_000,
+        max_time: int = 20_000,
         control_time: int = 0,
         health: int = 500,
         shields: int = 500,
@@ -820,7 +820,7 @@ class FireMode:
 
                     break
 
-        return int(math.ceil(statistics.mean(ttks))) if ttks else -1
+        return int(math.ceil(statistics.median(ttks))) if ttks else -1
 
     def generate_altair_simulation(
         self,
