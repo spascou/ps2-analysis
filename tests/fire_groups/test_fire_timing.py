@@ -67,9 +67,15 @@ def test_generate_shot_timings():
         chamber_time=None,
     )
 
-    assert ft.generate_shot_timings(shots=3) == [(0, True), (100, False), (200, False)]
+    assert list(ft.generate_shot_timings(shots=3)) == [
+        (0, True),
+        (100, False),
+        (200, False),
+    ]
 
-    assert ft.generate_shot_timings(shots=9, auto_burst_length=3, control_time=100) == [
+    assert list(
+        ft.generate_shot_timings(shots=9, auto_burst_length=3, control_time=100)
+    ) == [
         (0, True),
         (100, False),
         (200, False),
@@ -82,12 +88,16 @@ def test_generate_shot_timings():
     ]
 
     ft.is_automatic = False
-    assert ft.generate_shot_timings(shots=3) == [(0, True), (100, True), (200, True)]
+    assert list(ft.generate_shot_timings(shots=3)) == [
+        (0, True),
+        (100, True),
+        (200, True),
+    ]
 
     ft.burst_length = 3
     ft.burst_refire_time = 50
 
-    assert ft.generate_shot_timings(shots=6) == [
+    assert list(ft.generate_shot_timings(shots=6)) == [
         (0, True),
         (50, False),
         (100, False),
@@ -96,7 +106,7 @@ def test_generate_shot_timings():
         (300, False),
     ]
 
-    assert ft.generate_shot_timings(shots=6, control_time=10) == [
+    assert list(ft.generate_shot_timings(shots=6, control_time=10)) == [
         (0, True),
         (50, False),
         (100, False),

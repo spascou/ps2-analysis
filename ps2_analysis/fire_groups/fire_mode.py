@@ -1,7 +1,7 @@
 import math
 import random
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, Iterator, List, Literal, Optional, Tuple
 
 import altair
 from ps2_census.enums import FireModeType, PlayerState
@@ -294,29 +294,25 @@ class FireMode:
         return spm
 
     def generate_real_shot_timings(
-        self, shots=int, control_time: int = 0
-    ) -> List[Tuple[int, bool]]:
+        self, shots: int = -1, control_time: int = 0
+    ) -> Iterator[Tuple[int, bool]]:
 
-        shot_timings: List[Tuple[int, bool]] = []
+        if shots == 0:
+            raise ValueError("Cannot simulate 0 shots")
 
         reloads: int = 0
         remaining: int = shots
 
-        p_t: int = 0
+        last_timing: Tuple[int, bool] = (0, False)
 
-        while True:
+        shot_timings: List[Tuple[int, bool]]
 
-            if shot_timings:
-                p_t = shot_timings[-1][0]
+        while remaining > 0:
 
-            if remaining == 0:
+            if remaining < self.max_consecutive_shots:
 
-                break
-
-            elif remaining < self.max_consecutive_shots:
-
-                shot_timings += [
-                    (p_t + t + (reloads * self.reload_time), b)
+                shot_timings = [
+                    (last_timing[0] + t + (reloads * self.reload_time), b)
                     for t, b in self.fire_timing.generate_shot_timings(
                         shots=remaining, control_time=control_time
                     )
@@ -326,8 +322,8 @@ class FireMode:
 
             else:
 
-                shot_timings += [
-                    (p_t + t + (reloads * self.reload_time), b)
+                shot_timings = [
+                    (last_timing[0] + t + (reloads * self.reload_time), b)
                     for t, b in self.fire_timing.generate_shot_timings(
                         shots=self.max_consecutive_shots, control_time=control_time
                     )
@@ -337,40 +333,25 @@ class FireMode:
 
                 remaining -= self.max_consecutive_shots
 
-        return shot_timings
+            yield from shot_timings
+
+            last_timing = shot_timings[-1]
 
     def simulate_shots(
         self,
-        shots: int,
+        shots: int = -1,
         control_time: int = 0,
         player_state: PlayerState = PlayerState.STANDING,
         recentering: bool = False,
         recentering_response_time: int = 500,
         recentering_inertia_factor: float = 0.7,
-    ) -> List[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
+    ) -> Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
 
-        # Result as a list of time, cursor position tuple and pellets positions tuples
-        result: List[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]] = []
+        if shots == 0:
+            raise ValueError("Cannot simulate 0 shots")
 
         # Cone of fire at player state
         cof: ConeOfFire = self.player_state_cone_of_fire[player_state]
-
-        # Recoil
-        recoil: Recoil = self.recoil
-
-        # Fire timing
-        fire_timing: FireTiming = self.fire_timing
-        shot_timings: List[Tuple[int, bool]] = self.generate_real_shot_timings(
-            shots=shots, control_time=control_time
-        )
-
-        # Damage profiles
-        direct_damage_profile: Optional[DamageProfile] = self.direct_damage_profile
-
-        # Currently only consider direct damage profile
-        if not direct_damage_profile:
-
-            return result
 
         # Current state
         # Position; start at origin
@@ -378,10 +359,10 @@ class FireMode:
         curr_y = 0.0
 
         # Recoil parameters
-        curr_max_vertical_recoil: float = recoil.max_vertical or 0.0
-        curr_min_vertical_recoil: float = recoil.min_vertical or 0.0
-        curr_max_horizontal_recoil: float = recoil.max_horizontal or 0.0
-        curr_min_horizontal_recoil: float = recoil.min_horizontal or 0.0
+        curr_max_vertical_recoil: float = self.recoil.max_vertical or 0.0
+        curr_min_vertical_recoil: float = self.recoil.min_vertical or 0.0
+        curr_max_horizontal_recoil: float = self.recoil.max_horizontal or 0.0
+        curr_min_horizontal_recoil: float = self.recoil.min_horizontal or 0.0
 
         # CoF parameters
         curr_cof_angle: float = cof.min_angle * cof.multiplier
@@ -394,7 +375,9 @@ class FireMode:
 
         t: int
         b: bool
-        for t, b in shot_timings:
+        for t, b in self.generate_real_shot_timings(
+            shots=shots, control_time=control_time
+        ):
 
             delta = t - previous_t
 
@@ -407,7 +390,7 @@ class FireMode:
                 # CoF
                 ########################################################################
 
-                cof_recovery_delay: int = fire_timing.refire_time + (
+                cof_recovery_delay: int = self.fire_timing.refire_time + (
                     cof.recovery_delay or 0
                 )
                 min_cof_angle: float = cof.min_angle * cof.multiplier
@@ -433,65 +416,73 @@ class FireMode:
                 # Recoil
                 ########################################################################
 
-                recoil_recovery_delay: int = fire_timing.refire_time + recoil.recovery_delay
+                recoil_recovery_delay: int = self.fire_timing.refire_time + self.recoil.recovery_delay
 
                 # Under recovery delay -- scale recoil
                 if delta <= recoil_recovery_delay:
 
                     # Vertical
-                    if recoil.vertical_increase > 0:
+                    if self.recoil.vertical_increase > 0:
                         if curr_min_vertical_recoil < curr_max_vertical_recoil:
 
-                            curr_min_vertical_recoil += recoil.vertical_increase
+                            curr_min_vertical_recoil += self.recoil.vertical_increase
                             curr_min_vertical_recoil = min(
                                 curr_min_vertical_recoil, curr_max_vertical_recoil
                             )
 
-                    elif recoil.vertical_increase < 0:
+                    elif self.recoil.vertical_increase < 0:
                         if curr_max_vertical_recoil > curr_min_vertical_recoil:
 
-                            curr_max_vertical_recoil += recoil.vertical_increase
+                            curr_max_vertical_recoil += self.recoil.vertical_increase
                             curr_max_vertical_recoil = max(
                                 curr_min_vertical_recoil, curr_max_vertical_recoil
                             )
 
                     # Min horizontal
-                    if recoil.min_horizontal_increase < 0:
+                    if self.recoil.min_horizontal_increase < 0:
                         if curr_min_horizontal_recoil > 0:
 
-                            curr_min_horizontal_recoil += recoil.min_horizontal_increase
+                            curr_min_horizontal_recoil += (
+                                self.recoil.min_horizontal_increase
+                            )
                             curr_min_horizontal_recoil = max(
                                 0, curr_min_horizontal_recoil
                             )
 
-                    elif recoil.min_horizontal_increase > 0:
+                    elif self.recoil.min_horizontal_increase > 0:
                         if curr_min_horizontal_recoil < curr_max_horizontal_recoil:
 
-                            curr_min_horizontal_recoil += recoil.min_horizontal_increase
+                            curr_min_horizontal_recoil += (
+                                self.recoil.min_horizontal_increase
+                            )
                             curr_min_horizontal_recoil = min(
                                 curr_min_horizontal_recoil, curr_max_horizontal_recoil,
                             )
 
                     # Max horizontal
-                    if recoil.max_horizontal_increase > 0:
+                    if self.recoil.max_horizontal_increase > 0:
 
-                        curr_max_horizontal_recoil += recoil.max_horizontal_increase
+                        curr_max_horizontal_recoil += (
+                            self.recoil.max_horizontal_increase
+                        )
 
-                    elif recoil.max_horizontal_increase < 0:
+                    elif self.recoil.max_horizontal_increase < 0:
                         if curr_max_horizontal_recoil > curr_min_horizontal_recoil:
 
-                            curr_max_horizontal_recoil += recoil.max_horizontal_increase
+                            curr_max_horizontal_recoil += (
+                                self.recoil.max_horizontal_increase
+                            )
                             curr_max_horizontal_recoil = max(
                                 curr_min_horizontal_recoil, curr_max_horizontal_recoil,
                             )
 
                 # Above recovery delay and have a recovery rate -- recover recoil
-                elif recoil.recovery_rate:
+                elif self.recoil.recovery_rate:
 
                     full_recoil_recovery_delay: int = recoil_recovery_delay + int(
                         math.ceil(
                             math.sqrt(curr_x ** 2 + curr_y ** 2)
-                            / (recoil.recovery_rate / 1_000)
+                            / (self.recoil.recovery_rate / 1_000)
                         )
                     )
 
@@ -500,12 +491,12 @@ class FireMode:
 
                         curr_x -= (
                             (delta - recoil_recovery_delay)
-                            * (recoil.recovery_rate / 1_000)
+                            * (self.recoil.recovery_rate / 1_000)
                             * math.sin(math.atan(curr_x / curr_y))
                         )
                         curr_y -= (
                             (delta - recoil_recovery_delay)
-                            * (recoil.recovery_rate / 1_000)
+                            * (self.recoil.recovery_rate / 1_000)
                             * math.cos(math.atan(curr_x / curr_y))
                         )
 
@@ -554,6 +545,7 @@ class FireMode:
             # Current result
             ############################################################################
 
+            # Result as a tuple of time, cursor position tuple and pellets positions tuples
             curr_result: Tuple[int, Tuple[float, float], List[Tuple[float, float]]] = (
                 t,  # time
                 (curr_x, curr_y),  # cursor
@@ -582,7 +574,11 @@ class FireMode:
                 cof_v = cof_angle * math.sin(math.radians(cof_orientation))
 
             # Individual pellets position
-            for _ in range(direct_damage_profile.pellets_count):
+            for _ in range(
+                self.direct_damage_profile.pellets_count
+                if self.direct_damage_profile is not None
+                else 1
+            ):
 
                 pellet_h: float
                 pellet_v: float
@@ -624,7 +620,7 @@ class FireMode:
             # FSM scaling of un-angled vertical recoil
             if b is True:
 
-                recoil_v *= recoil.first_shot_multiplier
+                recoil_v *= self.recoil.first_shot_multiplier
 
             # Un-angled horizontal recoil amplitude
             recoil_h: float
@@ -643,36 +639,36 @@ class FireMode:
             recoil_a: float
 
             if (
-                (recoil.max_angle, recoil.min_angle) == (0.0, 0.0)
-                or recoil.min_angle is None
-                or recoil.max_angle is None
+                (self.recoil.max_angle, self.recoil.min_angle) == (0.0, 0.0)
+                or self.recoil.min_angle is None
+                or self.recoil.max_angle is None
             ):
 
                 recoil_a = 0.0
 
-            elif recoil.max_angle == recoil.min_angle:
+            elif self.recoil.max_angle == self.recoil.min_angle:
 
-                recoil_a = recoil.max_angle
+                recoil_a = self.recoil.max_angle
 
             else:
 
-                recoil_a = srandom.uniform(recoil.min_angle, recoil.max_angle)
+                recoil_a = srandom.uniform(self.recoil.min_angle, self.recoil.max_angle)
 
             # Horizontal recoil direction
             recoil_h_direction: Literal[-1, 1]
             recoil_h_choices: Tuple[Literal[-1, 1], Literal[-1, 1]] = (-1, 1)
 
-            if recoil.half_horizontal_tolerance:
+            if self.recoil.half_horizontal_tolerance:
 
                 left_bound: float = (
-                    (curr_y - recoil.half_horizontal_tolerance)
+                    (curr_y - self.recoil.half_horizontal_tolerance)
                     / math.tan(math.radians(90 - recoil_a))
-                ) if recoil_a != 0.0 else -recoil.half_horizontal_tolerance
+                ) if recoil_a != 0.0 else -self.recoil.half_horizontal_tolerance
 
                 right_bound: float = (
-                    (curr_y + recoil.half_horizontal_tolerance)
+                    (curr_y + self.recoil.half_horizontal_tolerance)
                     / math.tan(math.radians(90 - recoil_a))
-                ) if recoil_a != 0.0 else recoil.half_horizontal_tolerance
+                ) if recoil_a != 0.0 else self.recoil.half_horizontal_tolerance
 
                 if left_bound <= curr_x <= right_bound:
 
@@ -713,16 +709,14 @@ class FireMode:
                     math.radians(recoil_a)
                 ) + recoil_v * math.cos(math.radians(recoil_a))
 
-            # Append result
-            result.append(curr_result)
+            # Yield
+            yield curr_result
 
             # Update current position
             curr_x += recoil_h_angled
             curr_y += recoil_v_angled
 
             previous_t = t
-
-        return result
 
     def generate_altair_simulation(
         self,
@@ -737,7 +731,7 @@ class FireMode:
 
         datapoints: List[dict] = []
 
-        simulation: List[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
+        simulation: Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
         for simulation in (
             self.simulate_shots(
                 shots=shots,

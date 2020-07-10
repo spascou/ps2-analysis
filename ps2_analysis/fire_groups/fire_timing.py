@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Iterator, Optional, Tuple
 
 
 @dataclass
@@ -64,23 +64,21 @@ class FireTiming:
 
     def generate_shot_timings(
         self,
-        shots: int,
+        shots: int = -1,
         control_time: int = 0,
         auto_burst_length: Optional[int] = None,
         spool_cold_start: bool = True,
-    ) -> List[Tuple[int, bool]]:
+    ) -> Iterator[Tuple[int, bool]]:
+
+        if shots == 0:
+            raise ValueError("Cannot simulate 0 shots")
 
         time: int = self.total_delay
         fired_shots: int = 0
         burst_fired_shots: int = 0
 
-        result: List[Tuple[int, bool]] = []
-
-        if shots == 0:
-            return result
-
         fired_shots += 1
-        result.append((time, True))
+        yield (time, True)
 
         while fired_shots < shots:
 
@@ -137,20 +135,13 @@ class FireTiming:
 
             fired_shots += 1
 
-            result.append((time, first))
-
-        return result
+            yield (time, first)
 
     def time_to_fire_shots(self, shots: int, spool_cold_start: bool = True) -> int:
 
-        timings: List[Tuple[int, bool]] = self.generate_shot_timings(
-            shots=shots, spool_cold_start=spool_cold_start
-        )
-
-        if timings:
-
-            return timings[-1][0]
-
-        else:
-
+        if shots == 0:
             return 0
+
+        return list(
+            self.generate_shot_timings(shots=shots, spool_cold_start=spool_cold_start)
+        )[-1][0]

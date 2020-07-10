@@ -306,7 +306,7 @@ def test_shots_per_minute():
         charge_up_time=0,
         spool_up_time=None,
         spool_up_initial_refire_time=None,
-        chamber_time=0,
+        chamber_time=1000,
     )
 
     fm.ammo = Ammo(
@@ -315,7 +315,7 @@ def test_shots_per_minute():
         ammo_per_shot=1,
         block_auto=None,
         continuous=None,
-        short_reload_time=1000,
+        short_reload_time=0,
         reload_chamber_time=0,
         loop_start_time=None,
         loop_end_time=None,
@@ -581,4 +581,6 @@ def test_simulate_shots():
         player_state_can_ads={},
     )
 
-    assert len(fm.simulate_shots(shots=10, player_state=PlayerState.STANDING)) == 10
+    assert (
+        len(list(fm.simulate_shots(shots=10, player_state=PlayerState.STANDING))) == 10
+    )
