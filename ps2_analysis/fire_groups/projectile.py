@@ -23,4 +23,10 @@ class Projectile:
     @property
     def max_range(self) -> float:
 
-        return self.speed * (self.life_time / 1_000)
+        if self.life_time:
+
+            return self.speed * (self.life_time / 1_000)
+
+        else:
+
+            return -1

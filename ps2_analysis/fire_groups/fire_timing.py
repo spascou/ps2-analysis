@@ -140,7 +140,7 @@ class FireTiming:
     def time_to_fire_shots(self, shots: int, spool_cold_start: bool = True) -> int:
 
         if shots == 0:
-            return 0
+            return -1
 
         return list(
             self.generate_shot_timings(shots=shots, spool_cold_start=spool_cold_start)

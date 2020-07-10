@@ -1,5 +1,6 @@
 import math
 import random
+import statistics
 from dataclasses import dataclass
 from typing import Dict, Iterator, List, Literal, Optional, Tuple
 
@@ -12,7 +13,8 @@ from ps2_analysis.altair_utils import (
     X,
     Y,
 )
-from ps2_analysis.utils import float_range
+from ps2_analysis.geometry_utils import determine_planetman_hit_location
+from ps2_analysis.utils import damage_to_kill, float_range
 
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
@@ -210,17 +212,22 @@ class FireMode:
 
         dps: int = self.damage_per_shot(distance=distance, location=location)
 
-        if dps > 0 and damage_resistance < 1.0:
+        if dps > 0:
 
             return int(
                 math.ceil(
-                    (health + shields) / (math.ceil(dps * (1 - damage_resistance)))
+                    damage_to_kill(
+                        health=health,
+                        shields=shields,
+                        damage_resistance=damage_resistance,
+                    )
+                    / dps
                 )
             )
 
         else:
 
-            return 0
+            return -1
 
     def shots_to_kill_ranges(
         self,
@@ -294,7 +301,10 @@ class FireMode:
         return stk_ranges
 
     def generate_real_shot_timings(
-        self, shots: int = -1, control_time: int = 0
+        self,
+        shots: int = -1,
+        control_time: int = 0,
+        auto_burst_length: Optional[int] = None,
     ) -> Iterator[Tuple[int, bool]]:
 
         if shots == 0:
@@ -307,14 +317,16 @@ class FireMode:
 
         shot_timings: List[Tuple[int, bool]]
 
-        while remaining > 0:
+        while shots == -1 or remaining > 0:
 
-            if remaining < self.max_consecutive_shots:
+            if shots > 0 and remaining < self.max_consecutive_shots:
 
                 shot_timings = [
                     (last_timing[0] + t + (reloads * self.reload_time), b)
                     for t, b in self.fire_timing.generate_shot_timings(
-                        shots=remaining, control_time=control_time
+                        shots=remaining,
+                        control_time=control_time,
+                        auto_burst_length=auto_burst_length,
                     )
                 ]
 
@@ -325,7 +337,9 @@ class FireMode:
                 shot_timings = [
                     (last_timing[0] + t + (reloads * self.reload_time), b)
                     for t, b in self.fire_timing.generate_shot_timings(
-                        shots=self.max_consecutive_shots, control_time=control_time
+                        shots=self.max_consecutive_shots,
+                        control_time=control_time,
+                        auto_burst_length=auto_burst_length,
                     )
                 ]
 
@@ -341,9 +355,10 @@ class FireMode:
         self,
         shots: int = -1,
         control_time: int = 0,
+        auto_burst_length: Optional[int] = None,
         player_state: PlayerState = PlayerState.STANDING,
         recentering: bool = False,
-        recentering_response_time: int = 500,
+        recentering_response_time: int = 1_000,
         recentering_inertia_factor: float = 0.7,
     ) -> Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
 
@@ -376,7 +391,7 @@ class FireMode:
         t: int
         b: bool
         for t, b in self.generate_real_shot_timings(
-            shots=shots, control_time=control_time
+            shots=shots, control_time=control_time, auto_burst_length=auto_burst_length
         ):
 
             delta = t - previous_t
@@ -718,13 +733,103 @@ class FireMode:
 
             previous_t = t
 
+    def damage_inflicted_by_pellets(
+        self,
+        distance: float,
+        pellets: List[Tuple[float, float]],
+        aim_location: DamageLocation = DamageLocation.TORSO,
+    ) -> int:
+
+        damage: int = 0
+
+        pellet_h_angle: float
+        pellet_v_angle: float
+        for pellet_h_angle, pellet_v_angle in pellets:
+            pellet_x: float = math.tan(math.radians(pellet_h_angle)) * distance
+            pellet_y: float = math.tan(math.radians(pellet_v_angle)) * distance
+
+            hit_location: Optional[DamageLocation] = determine_planetman_hit_location(
+                x=pellet_x, y=pellet_y, aim_location=aim_location
+            )
+
+            damage += (
+                self.damage_per_pellet(distance=distance, location=hit_location)
+                if hit_location
+                else 0
+            )
+
+        return damage
+
+    def real_time_to_kill(
+        self,
+        distance: float = 1.0,
+        runs: int = 1,
+        max_time: int = 15_000,
+        control_time: int = 0,
+        health: int = 500,
+        shields: int = 500,
+        damage_resistance: float = 0.0,
+        auto_burst_length: Optional[int] = None,
+        aim_location: DamageLocation = DamageLocation.TORSO,
+        player_state: PlayerState = PlayerState.STANDING,
+        recentering: bool = False,
+        recentering_response_time: int = 1_000,
+        recentering_inertia_factor: float = 0.7,
+    ) -> int:
+
+        if not self.direct_damage_profile and not self.indirect_damage_profile:
+            return -1
+
+        ttks: List[int] = []
+
+        dtk: int = damage_to_kill(
+            health=health, shields=shields, damage_resistance=damage_resistance
+        )
+
+        simulation: Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
+        for simulation in (
+            self.simulate_shots(
+                shots=-1,
+                control_time=control_time,
+                auto_burst_length=auto_burst_length,
+                recentering=recentering,
+                recentering_response_time=recentering_response_time,
+                recentering_inertia_factor=recentering_inertia_factor,
+                player_state=player_state,
+            )
+            for _ in range(runs)
+        ):
+
+            total_damage: int = 0
+
+            t: int
+            pellets_coors: List[Tuple[float, float]]
+            for t, _, pellets_coors in simulation:
+
+                if t > max_time:
+
+                    break
+
+                total_damage += self.damage_inflicted_by_pellets(
+                    distance=distance, pellets=pellets_coors, aim_location=aim_location
+                )
+
+                if total_damage >= dtk:
+
+                    ttks.append(t)
+
+                    break
+
+        return int(math.ceil(statistics.mean(ttks))) if ttks else -1
+
     def generate_altair_simulation(
         self,
         shots: int,
-        runs: int,
+        runs: int = 1,
         control_time: int = 0,
+        auto_burst_length: Optional[int] = None,
         recentering: bool = False,
-        recentering_response_time: int = 500,
+        recentering_response_time: int = 1_000,
         recentering_inertia_factor: float = 0.3,
         player_state: PlayerState = PlayerState.STANDING,
     ) -> altair.HConcatChart:
@@ -736,6 +841,7 @@ class FireMode:
             self.simulate_shots(
                 shots=shots,
                 control_time=control_time,
+                auto_burst_length=auto_burst_length,
                 recentering=recentering,
                 recentering_response_time=recentering_response_time,
                 recentering_inertia_factor=recentering_inertia_factor,

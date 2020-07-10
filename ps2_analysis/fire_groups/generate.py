@@ -144,6 +144,49 @@ def parse_fire_group_data(
                         if k in effect:
                             damage_indirect_effect[v] = effect[k]
 
+            ddp: Optional[DamageProfile] = (
+                DamageProfile(
+                    # Base damage
+                    max_damage=get(fm, "max_damage", int),
+                    max_damage_range=optget(fm, "max_damage_range", float, 0.0),
+                    min_damage=optget(
+                        fm, "min_damage", int, get(fm, "max_damage", int)
+                    ),
+                    min_damage_range=optget(fm, "min_damage_range", float, 0.0),
+                    # Pellets
+                    pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
+                    # Locational modifiers
+                    location_multiplier={
+                        DamageLocation.HEAD: 1.0
+                        + optget(fm, "damage_head_multiplier", float, 0.0),
+                        DamageLocation.LEGS: 1.0
+                        + optget(fm, "damage_legs_multiplier", float, 0.0),
+                    },
+                    effect=damage_direct_effect or {},
+                )
+                if "max_damage" in fm
+                else None
+            )
+
+            if ddp:
+                if ddp.min_damage == 0 and ddp.min_damage_range == 0.0:
+                    ddp.min_damage = ddp.max_damage
+                    ddp.min_damage_range = ddp.max_damage_range
+
+            idp: Optional[DamageProfile] = (
+                DamageProfile(
+                    # Base damage
+                    max_damage=get(fm, "max_damage_ind", int),
+                    max_damage_range=get(fm, "max_damage_ind_radius", float),
+                    min_damage=get(fm, "min_damage_ind", int),
+                    min_damage_range=get(fm, "min_damage_ind_radius", float),
+                    pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
+                    effect=damage_indirect_effect or {},
+                )
+                if "max_damage_ind" in fm
+                else None
+            )
+
             # Fire Mode
             fire_mode: FireMode = FireMode(
                 # Basic information
@@ -156,42 +199,8 @@ def parse_fire_group_data(
                 turn_multiplier=get(fm, "turn_modifier", float),
                 move_multiplier=get(fm, "move_modifier", float),
                 # Damage profiles
-                direct_damage_profile=(
-                    DamageProfile(
-                        # Base damage
-                        max_damage=get(fm, "max_damage", int),
-                        max_damage_range=optget(fm, "max_damage_range", float, 0.0),
-                        min_damage=optget(
-                            fm, "min_damage", int, get(fm, "max_damage", int)
-                        ),
-                        min_damage_range=optget(fm, "min_damage_range", float, 0.0),
-                        # Pellets
-                        pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
-                        # Locational modifiers
-                        location_multiplier={
-                            DamageLocation.HEAD: 1.0
-                            + optget(fm, "damage_head_multiplier", float, 0.0),
-                            DamageLocation.LEGS: 1.0
-                            + optget(fm, "damage_legs_multiplier", float, 0.0),
-                        },
-                        effect=damage_direct_effect or {},
-                    )
-                    if "max_damage" in fm
-                    else None
-                ),
-                indirect_damage_profile=(
-                    DamageProfile(
-                        # Base damage
-                        max_damage=get(fm, "max_damage_ind", int),
-                        max_damage_range=get(fm, "max_damage_ind_radius", float),
-                        min_damage=get(fm, "min_damage_ind", int),
-                        min_damage_range=get(fm, "min_damage_ind_radius", float),
-                        pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
-                        effect=damage_indirect_effect or {},
-                    )
-                    if "max_damage_ind" in fm
-                    else None
-                ),
+                direct_damage_profile=ddp,
+                indirect_damage_profile=idp,
                 # Zoom
                 zoom=get(fm, "zoom_default", float),
                 # Sway

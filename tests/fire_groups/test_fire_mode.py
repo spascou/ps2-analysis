@@ -488,6 +488,108 @@ def test_shots_to_kill_ranges():
     assert fm.shots_to_kill_ranges() == [(0.0, 1), (160.0, 2)]
 
 
+def test_generate_real_shot_timings():
+    ft: FireTiming = FireTiming(
+        is_automatic=True,
+        refire_time=100,
+        fire_duration=None,
+        burst_length=None,
+        burst_refire_time=None,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=None,
+    )
+
+    rc: Recoil = Recoil(
+        max_angle=0.0,
+        min_angle=0.0,
+        max_vertical=0.0,
+        min_vertical=0.0,
+        vertical_increase=0.0,
+        vertical_crouched_increase=0.0,
+        max_horizontal=0.0,
+        min_horizontal=0.0,
+        horizontal_tolerance=0.0,
+        max_horizontal_increase=0.0,
+        min_horizontal_increase=0.0,
+        recovery_acceleration=0.0,
+        recovery_delay=0.0,
+        recovery_rate=0.0,
+        first_shot_multiplier=1.0,
+    )
+
+    am: Ammo = Ammo(
+        clip_size=5,
+        total_capacity=100,
+        ammo_per_shot=1,
+        block_auto=None,
+        continuous=None,
+        short_reload_time=500,
+        reload_chamber_time=500,
+        loop_start_time=None,
+        loop_end_time=None,
+    )
+
+    fm: FireMode = FireMode(
+        fire_mode_id=0,
+        type=FireModeType.IRON_SIGHT,
+        description="",
+        is_ads=True,
+        detect_range=30.0,
+        move_multiplier=1.0,
+        turn_multiplier=1.0,
+        direct_damage_profile=None,
+        indirect_damage_profile=None,
+        zoom=1.5,
+        sway_can_steady=None,
+        sway_amplitude_x=None,
+        sway_amplitude_y=None,
+        sway_period_x=None,
+        sway_period_y=None,
+        ammo=am,
+        heat=None,
+        fire_timing=ft,
+        recoil=rc,
+        projectile=None,
+        player_state_cone_of_fire={},
+        player_state_can_ads={},
+    )
+
+    assert list(fm.generate_real_shot_timings(shots=7)) == [
+        (0, True),
+        (100, False),
+        (200, False),
+        (300, False),
+        (400, False),
+        (1400, True),
+        (1500, False),
+    ]
+
+    assert list(fm.generate_real_shot_timings(shots=7, control_time=100)) == [
+        (0, True),
+        (100, False),
+        (200, False),
+        (300, False),
+        (400, False),
+        (1400, True),
+        (1500, False),
+    ]
+
+    assert list(
+        fm.generate_real_shot_timings(shots=7, control_time=100, auto_burst_length=2)
+    ) == [
+        (0, True),
+        (100, False),
+        (300, True),
+        (400, False),
+        (600, True),
+        (1600, True),
+        (1700, False),
+    ]
+
+
 def test_simulate_shots():
     ft: FireTiming = FireTiming(
         is_automatic=True,
@@ -584,3 +686,109 @@ def test_simulate_shots():
     assert (
         len(list(fm.simulate_shots(shots=10, player_state=PlayerState.STANDING))) == 10
     )
+
+
+def test_real_time_to_kill():
+    ft: FireTiming = FireTiming(
+        is_automatic=True,
+        refire_time=100,
+        fire_duration=None,
+        burst_length=None,
+        burst_refire_time=None,
+        delay=0,
+        charge_up_time=0,
+        spool_up_time=None,
+        spool_up_initial_refire_time=None,
+        chamber_time=0,
+    )
+
+    rc: Recoil = Recoil(
+        max_angle=0.0,
+        min_angle=0.0,
+        max_vertical=0.0,
+        min_vertical=0.0,
+        vertical_increase=0.0,
+        vertical_crouched_increase=0.0,
+        max_horizontal=0.0,
+        min_horizontal=0.0,
+        horizontal_tolerance=0.0,
+        max_horizontal_increase=0.0,
+        min_horizontal_increase=0.0,
+        recovery_acceleration=0.0,
+        recovery_delay=0.0,
+        recovery_rate=0.0,
+        first_shot_multiplier=1.0,
+    )
+
+    am: Ammo = Ammo(
+        clip_size=10,
+        total_capacity=100,
+        ammo_per_shot=1,
+        block_auto=None,
+        continuous=None,
+        short_reload_time=700,
+        reload_chamber_time=300,
+        loop_start_time=None,
+        loop_end_time=None,
+    )
+
+    ddp: DamageProfile = DamageProfile(
+        max_damage=1000,
+        max_damage_range=10,
+        min_damage=0,
+        min_damage_range=20,
+        pellets_count=1,
+    )
+
+    cof: ConeOfFire = ConeOfFire(
+        max_angle=0.0,
+        min_angle=0.0,
+        bloom=0.0,
+        recovery_rate=20,
+        recovery_delay=100,
+        recovery_delay_threshold=None,
+        multiplier=1.0,
+        moving_multiplier=1.5,
+        pellet_spread=None,
+        grow_rate=None,
+        shots_before_penalty=None,
+        turn_penalty=None,
+        range=0.0,
+    )
+
+    fm: FireMode = FireMode(
+        fire_mode_id=0,
+        type=FireModeType.IRON_SIGHT,
+        description="",
+        is_ads=True,
+        detect_range=30.0,
+        move_multiplier=1.0,
+        turn_multiplier=1.0,
+        direct_damage_profile=ddp,
+        indirect_damage_profile=None,
+        zoom=1.5,
+        sway_can_steady=None,
+        sway_amplitude_x=None,
+        sway_amplitude_y=None,
+        sway_period_x=None,
+        sway_period_y=None,
+        ammo=am,
+        heat=None,
+        fire_timing=ft,
+        recoil=rc,
+        projectile=None,
+        player_state_cone_of_fire={PlayerState.STANDING: cof},
+        player_state_can_ads={},
+    )
+
+    assert fm.real_time_to_kill(distance=1.0, runs=10) == 0
+
+    assert fm.real_time_to_kill(distance=10.0, runs=10) == 0
+
+    assert fm.real_time_to_kill(distance=11.0, runs=10) == 100
+
+    assert fm.real_time_to_kill(distance=15.0, runs=10) == 100
+
+    assert fm.real_time_to_kill(distance=16.0, runs=10) == 200
+
+    assert fm.real_time_to_kill(distance=20.0, runs=10) == -1

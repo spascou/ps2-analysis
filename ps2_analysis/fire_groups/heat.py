@@ -22,12 +22,18 @@ class Heat:
 
         else:
 
-            return 0
+            return -1
 
     @property
     def shots_to_overheat(self) -> int:
 
-        return self.shots_before_overheat + 1
+        if self.shots_before_overheat != -1:
+
+            return self.shots_before_overheat + 1
+
+        else:
+
+            return -1
 
     def recovery_time(self, heat: int) -> int:
 
@@ -39,7 +45,7 @@ class Heat:
 
         else:
 
-            return 0
+            return -1
 
     @property
     def full_recovery_time(self) -> int:

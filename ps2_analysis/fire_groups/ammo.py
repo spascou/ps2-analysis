@@ -21,13 +21,13 @@ class Ammo:
     @property
     def shots_per_clip(self) -> int:
 
-        if self.ammo_per_shot > 0:
+        if self.ammo_per_shot > 0 and self.clip_size > 0:
 
             return int(math.floor(self.clip_size / self.ammo_per_shot))
 
         else:
 
-            return 0
+            return -1
 
     @property
     def long_reload_time(self) -> int:

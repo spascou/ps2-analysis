@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
-from ps2_analysis.utils import float_range
+from ps2_analysis.utils import damage_to_kill, float_range
 
 
 class DamageLocation(str, Enum):
@@ -85,17 +85,22 @@ class DamageProfile:
 
         dps: int = self.damage_per_shot(distance=distance, location=location)
 
-        if dps > 0 and damage_resistance < 1.0:
+        if dps > 0:
 
             return int(
                 math.ceil(
-                    (health + shields) / (math.ceil(dps * (1 - damage_resistance)))
+                    damage_to_kill(
+                        health=health,
+                        shields=shields,
+                        damage_resistance=damage_resistance,
+                    )
+                    / dps
                 )
             )
 
         else:
 
-            return 0
+            return -1
 
     def shots_to_kill_ranges(
         self,
@@ -110,11 +115,13 @@ class DamageProfile:
         stk_ranges: List[Tuple[float, int]] = []
 
         if self.damage_range_delta > 0:
+
             previous_stk: Optional[int] = None
 
             for r in float_range(
-                0, self.min_damage_range + step, step, precision_decimals
+                0.0, self.min_damage_range + step, step, precision_decimals
             ):
+
                 stk: int = self.shots_to_kill(
                     distance=r,
                     location=location,
@@ -124,12 +131,17 @@ class DamageProfile:
                 )
 
                 if previous_stk is None or stk != previous_stk:
+
                     if r >= step:
+
                         stk_ranges.append((round(r - step, precision_decimals), stk))
+
                     else:
+
                         stk_ranges.append((r, stk))
 
                 previous_stk = stk
+
         else:
 
             stk_ranges.append(
