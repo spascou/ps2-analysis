@@ -73,6 +73,88 @@ class FireMode:
     # Player state can ads
     player_state_can_ads: Dict[PlayerState, bool]
 
+    @property
+    def max_consecutive_shots(self) -> int:
+
+        max_consecutive_shots: int
+
+        if self.heat:
+
+            max_consecutive_shots = self.heat.shots_before_overheat
+
+        elif self.ammo:
+
+            max_consecutive_shots = self.ammo.shots_per_clip
+
+        else:
+
+            raise ValueError("No Ammo nor Heat available")
+
+        return max_consecutive_shots
+
+    @property
+    def reload_time(self) -> int:
+
+        reload_time: int
+
+        if self.heat:
+
+            reload_time = self.heat.recovery_time(
+                heat=self.max_consecutive_shots * self.heat.heat_per_shot
+            )
+
+        elif self.ammo:
+
+            reload_time = self.ammo.long_reload_time
+
+        else:
+
+            raise ValueError("No Ammo nor Heat available")
+
+        return reload_time
+
+    @property
+    def shots_per_minute(self) -> int:
+
+        shots: int
+        time: int
+        spm: int
+
+        if (
+            self.fire_timing.burst_length
+            and self.fire_timing.burst_length > 1
+            and self.fire_timing.burst_refire_time
+        ):
+
+            shots = self.fire_timing.burst_length
+            time = (
+                shots - 1
+            ) * self.fire_timing.burst_refire_time + self.fire_timing.refire_time
+
+        elif self.max_consecutive_shots > 1:
+
+            shots = 1
+            time = self.fire_timing.refire_time + (self.fire_timing.chamber_time or 0)
+
+        else:
+
+            shots = 1
+            time = (
+                self.fire_timing.total_delay
+                + self.fire_timing.refire_time
+                + (self.fire_timing.chamber_time or 0)
+            )
+
+        if time > 0:
+
+            spm = int(math.floor(60_000 * shots / time))
+
+        else:
+
+            spm = 0
+
+        return spm
+
     def damage_per_pellet(
         self, distance: float, location: DamageLocation = DamageLocation.TORSO
     ) -> int:
@@ -210,88 +292,6 @@ class FireMode:
             )
 
         return stk_ranges
-
-    @property
-    def max_consecutive_shots(self) -> int:
-
-        max_consecutive_shots: int
-
-        if self.heat:
-
-            max_consecutive_shots = self.heat.shots_before_overheat
-
-        elif self.ammo:
-
-            max_consecutive_shots = self.ammo.shots_per_clip
-
-        else:
-
-            raise ValueError("No Ammo nor Heat available")
-
-        return max_consecutive_shots
-
-    @property
-    def reload_time(self) -> int:
-
-        reload_time: int
-
-        if self.heat:
-
-            reload_time = self.heat.recovery_time(
-                heat=self.max_consecutive_shots * self.heat.heat_per_shot
-            )
-
-        elif self.ammo:
-
-            reload_time = self.ammo.long_reload_time
-
-        else:
-
-            raise ValueError("No Ammo nor Heat available")
-
-        return reload_time
-
-    @property
-    def shots_per_minute(self) -> int:
-
-        shots: int
-        time: int
-        spm: int
-
-        if (
-            self.fire_timing.burst_length
-            and self.fire_timing.burst_length > 1
-            and self.fire_timing.burst_refire_time
-        ):
-
-            shots = self.fire_timing.burst_length
-            time = (
-                shots - 1
-            ) * self.fire_timing.burst_refire_time + self.fire_timing.refire_time
-
-        elif self.max_consecutive_shots > 1:
-
-            shots = 1
-            time = self.fire_timing.refire_time + (self.fire_timing.chamber_time or 0)
-
-        else:
-
-            shots = 1
-            time = (
-                self.fire_timing.total_delay
-                + self.fire_timing.refire_time
-                + (self.fire_timing.chamber_time or 0)
-            )
-
-        if time > 0:
-
-            spm = int(math.floor(60_000 * shots / time))
-
-        else:
-
-            spm = 0
-
-        return spm
 
     def generate_real_shot_timings(
         self, shots: int = -1, control_time: int = 0
