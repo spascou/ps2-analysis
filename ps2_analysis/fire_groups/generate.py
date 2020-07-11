@@ -310,6 +310,7 @@ def parse_fire_group_data(
             transition_time=optget(fg, "transition_duration_ms", int, 0),
             fire_modes=fire_modes,
         )
+
     except (KeyError, ValueError, AssertionError) as e:
         print(json.dumps(fg, sort_keys=True, indent=2))
         raise e

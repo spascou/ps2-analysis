@@ -33,7 +33,9 @@ EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
 )  # turrets
 
 
-def generate_all_vehicle_weapons(data_files_directory: str) -> Iterator[VehicleWeapon]:
+def generate_all_vehicle_weapons(
+    data_files_directory: str, no_children: bool = False
+) -> Iterator[VehicleWeapon]:
     print("Generating vehicle weapon objects")
 
     # Load and filter vehicle weapons
@@ -54,7 +56,9 @@ def generate_all_vehicle_weapons(data_files_directory: str) -> Iterator[VehicleW
     # Generate vehicle weapons
     yield from (
         parse_vehicle_weapon_data(
-            data=data, fire_groups_data_id_idx=all_fire_groups_data_id_idx
+            data=data,
+            fire_groups_data_id_idx=all_fire_groups_data_id_idx,
+            no_children=no_children,
         )
         for data in filter(
             lambda x: (int(x["item_id"]) not in EXCLUDED_ITEM_IDS),
@@ -64,7 +68,7 @@ def generate_all_vehicle_weapons(data_files_directory: str) -> Iterator[VehicleW
 
 
 def parse_vehicle_weapon_data(
-    data: dict, fire_groups_data_id_idx: Dict[int, dict]
+    data: dict, fire_groups_data_id_idx: Dict[int, dict], no_children: bool = False
 ) -> VehicleWeapon:
 
     try:
@@ -79,94 +83,98 @@ def parse_vehicle_weapon_data(
         # Fire groups
         fire_groups: List[FireGroup] = []
 
-        _fg: dict
-        for _fg in sorted(
-            w["weapon_to_fire_groups"],
-            key=lambda x: optget(x, "fire_group_index", int, 0),
-        ):
-            fg_id: int = get(_fg, "fire_group_id", int)
+        if no_children is False:
 
-            fg: dict = fire_groups_data_id_idx[fg_id]
+            _fg: dict
+            for _fg in sorted(
+                w["weapon_to_fire_groups"],
+                key=lambda x: optget(x, "fire_group_index", int, 0),
+            ):
+                fg_id: int = get(_fg, "fire_group_id", int)
 
-            fire_groups.append(
-                parse_fire_group_data(
-                    fg=fg,
-                    ammo_clip_size=optget(w_d, "clip_size", int, 0),
-                    ammo_total_capacity=optget(w_d, "capacity", int, 0),
-                    heat_overheat_penalty_time=optget(
-                        w, "heat_overheat_penalty_ms", int, 0
-                    ),
-                    heat_bleed_off_rate=optget(w, "heat_bleed_off_rate", int, 0),
+                fg: dict = fire_groups_data_id_idx[fg_id]
+
+                fire_groups.append(
+                    parse_fire_group_data(
+                        fg=fg,
+                        ammo_clip_size=optget(w_d, "clip_size", int, 0),
+                        ammo_total_capacity=optget(w_d, "capacity", int, 0),
+                        heat_overheat_penalty_time=optget(
+                            w, "heat_overheat_penalty_ms", int, 0
+                        ),
+                        heat_bleed_off_rate=optget(w, "heat_bleed_off_rate", int, 0),
+                    )
                 )
-            )
 
         # Attachments
         attachments: List[Attachment] = []
 
-        handled_attachments: Set[Tuple[int, int]] = set()
+        if no_children is False:
 
-        _at: dict
-        for _at in sorted(
-            data.get("item_attachments", []),
-            key=lambda x: get(x, "attachment_item_id", int),
-        ):
-            at_item_id: int = get(_at, "item_id", int)
-            at_attachment_item_id: int = get(_at, "attachment_item_id", int)
+            handled_attachments: Set[Tuple[int, int]] = set()
 
-            if (at_item_id, at_attachment_item_id) in handled_attachments:
-                continue
+            _at: dict
+            for _at in sorted(
+                data.get("item_attachments", []),
+                key=lambda x: get(x, "attachment_item_id", int),
+            ):
+                at_item_id: int = get(_at, "item_id", int)
+                at_attachment_item_id: int = get(_at, "attachment_item_id", int)
 
-            at: dict = _at["item"]
+                if (at_item_id, at_attachment_item_id) in handled_attachments:
+                    continue
 
-            attachment_effects: List[dict] = []
-            attachment_fire_groups: List[FireGroup] = []
+                at: dict = _at["item"]
 
-            for zef in at.get("zone_effects", []):
-                p_zef: dict = {}
+                attachment_effects: List[dict] = []
+                attachment_fire_groups: List[FireGroup] = []
 
-                # Effect Type
-                eft: dict = zef["zone_effect_type"]
+                for zef in at.get("zone_effects", []):
+                    p_zef: dict = {}
 
-                p_zef["action"] = eft["description"]
+                    # Effect Type
+                    eft: dict = zef["zone_effect_type"]
 
-                for k, v in eft.items():
-                    if k.startswith("string") or k.startswith("param"):
-                        if k in zef:
-                            p_zef[v] = zef[k]
+                    p_zef["action"] = eft["description"]
 
-                # Handle added fire groups
-                if eft["description"] == "Weapon Add Fire Group":
-                    a_fg_id: int = get(p_zef, "FireGroupId", int)
+                    for k, v in eft.items():
+                        if k.startswith("string") or k.startswith("param"):
+                            if k in zef:
+                                p_zef[v] = zef[k]
 
-                    a_fg: dict = fire_groups_data_id_idx[a_fg_id]
+                    # Handle added fire groups
+                    if eft["description"] == "Weapon Add Fire Group":
+                        a_fg_id: int = get(p_zef, "FireGroupId", int)
 
-                    attachment_fire_groups.append(
-                        parse_fire_group_data(
-                            fg=a_fg,
-                            ammo_clip_size=0,
-                            ammo_total_capacity=0,
-                            heat_overheat_penalty_time=0,
-                            heat_bleed_off_rate=0,
+                        a_fg: dict = fire_groups_data_id_idx[a_fg_id]
+
+                        attachment_fire_groups.append(
+                            parse_fire_group_data(
+                                fg=a_fg,
+                                ammo_clip_size=0,
+                                ammo_total_capacity=0,
+                                heat_overheat_penalty_time=0,
+                                heat_bleed_off_rate=0,
+                            )
                         )
-                    )
 
-                attachment_effects.append(p_zef)
+                    attachment_effects.append(p_zef)
 
-            attachment: Attachment = Attachment(
-                item_id=at_item_id,
-                attachment_item_id=at_attachment_item_id,
-                name=at["name"]["en"],
-                description=at.get("description", {"en": ""})["en"],
-                slug=slugify(at["name"]["en"]),
-                image_path=at.get("image_path"),
-                is_default=get(at, "is_default_attachment", int) == 1,
-                effects=attachment_effects,
-                fire_groups=attachment_fire_groups,
-            )
+                attachment: Attachment = Attachment(
+                    item_id=at_item_id,
+                    attachment_item_id=at_attachment_item_id,
+                    name=at["name"]["en"],
+                    description=at.get("description", {"en": ""})["en"],
+                    slug=slugify(at["name"]["en"]),
+                    image_path=at.get("image_path"),
+                    is_default=get(at, "is_default_attachment", int) == 1,
+                    effects=attachment_effects,
+                    fire_groups=attachment_fire_groups,
+                )
 
-            attachments.append(attachment)
+                attachments.append(attachment)
 
-            handled_attachments.add((at_item_id, at_attachment_item_id))
+                handled_attachments.add((at_item_id, at_attachment_item_id))
 
         # Infantry weapons
         vehicle_weapon: VehicleWeapon = VehicleWeapon(
