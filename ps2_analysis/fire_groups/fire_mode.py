@@ -3,7 +3,7 @@ import math
 import random
 import statistics
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Literal, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Literal, Optional, Tuple
 
 import altair
 import methodtools
@@ -666,9 +666,11 @@ class FireMode:
         recentering_response_time: int = 1_000,
         recentering_inertia_factor: float = 0.3,
         player_state: PlayerState = PlayerState.STANDING,
-        width: Union[int, str] = "container",
-        height: Union[int, str] = "container",
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> altair.HConcatChart:
+
+        assert (width or height) and not (width and height)
 
         datapoints: List[dict] = []
 
@@ -702,8 +704,30 @@ class FireMode:
                         {"Time": t, X: pellet_x, Y: pellet_y, "Type": "pellet"}
                     )
 
-        min_angle: float = min((c for d in datapoints for c in (d[X], d[Y])))
-        max_angle: float = max((c for d in datapoints for c in (d[X], d[Y])))
+        min_x: float = min((d[X] for d in datapoints))
+        max_x: float = max((d[X] for d in datapoints))
+        min_y: float = min((d[Y] for d in datapoints))
+        max_y: float = max((d[Y] for d in datapoints))
+
+        if height:
+
+            if max_y != min_y:
+
+                width = int(math.ceil((max_x - min_x) * height / (max_y - min_y)))
+
+            else:
+
+                width = None
+
+        elif width:
+
+            if max_x != min_x:
+
+                height = int(math.ceil((max_y - min_y) * width / (max_x - min_x)))
+
+            else:
+
+                height = None
 
         dataset: altair.Data = altair.Data(values=datapoints)
 
@@ -714,12 +738,12 @@ class FireMode:
                 x=altair.X(
                     f"{X}:Q",
                     axis=altair.Axis(title="horizontal angle (degrees)"),
-                    scale=altair.Scale(domain=(min_angle, max_angle), zero=False),
+                    scale=altair.Scale(domain=(min_x, max_x), zero=False),
                 ),
                 y=altair.Y(
                     f"{Y}:Q",
                     axis=altair.Axis(title="vertical angle (degrees)"),
-                    scale=altair.Scale(domain=(min_angle, max_angle), zero=False),
+                    scale=altair.Scale(domain=(min_y, max_y), zero=False),
                 ),
                 color=SIMULATION_POINT_TYPE_COLOR,
                 tooltip=["Time:Q", f"{X}:Q", f"{Y}:Q"],
