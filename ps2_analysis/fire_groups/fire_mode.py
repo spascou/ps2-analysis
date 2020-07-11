@@ -702,6 +702,9 @@ class FireMode:
                         {"Time": t, X: pellet_x, Y: pellet_y, "Type": "pellet"}
                     )
 
+        min_angle: float = min((c for d in datapoints for c in (d[X], d[Y])))
+        max_angle: float = max((c for d in datapoints for c in (d[X], d[Y])))
+
         dataset: altair.Data = altair.Data(values=datapoints)
 
         chart: altair.Chart = (
@@ -709,10 +712,14 @@ class FireMode:
             .mark_point()
             .encode(
                 x=altair.X(
-                    f"{X}:Q", axis=altair.Axis(title="horizontal angle (degrees)")
+                    f"{X}:Q",
+                    axis=altair.Axis(title="horizontal angle (degrees)"),
+                    scale=altair.Scale(domain=(min_angle, max_angle), zero=False),
                 ),
                 y=altair.Y(
-                    f"{Y}:Q", axis=altair.Axis(title="vertical angle (degrees)")
+                    f"{Y}:Q",
+                    axis=altair.Axis(title="vertical angle (degrees)"),
+                    scale=altair.Scale(domain=(min_angle, max_angle), zero=False),
                 ),
                 color=SIMULATION_POINT_TYPE_COLOR,
                 tooltip=["Time:Q", f"{X}:Q", f"{Y}:Q"],

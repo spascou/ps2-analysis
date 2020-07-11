@@ -46,7 +46,11 @@ if weapon:
         for fire_mode in fire_group.fire_modes:
 
             fire_mode.altair_simulate_shots(
-                shots=fire_mode.max_consecutive_shots, runs=10, recentering=False
+                shots=fire_mode.max_consecutive_shots,
+                runs=10,
+                recentering=False,
+                width=900,
+                height=900,
             ).save(
                 f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.html"
             )
