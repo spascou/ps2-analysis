@@ -3,7 +3,7 @@ import math
 import random
 import statistics
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Literal, Optional, Tuple
+from typing import Dict, Iterator, List, Literal, Optional, Tuple, Union
 
 import altair
 import methodtools
@@ -666,6 +666,7 @@ class FireMode:
         recentering_response_time: int = 1_000,
         recentering_inertia_factor: float = 0.3,
         player_state: PlayerState = PlayerState.STANDING,
+        width: Union[int, str] = "container",
     ) -> altair.HConcatChart:
 
         datapoints: List[dict] = []
@@ -715,6 +716,7 @@ class FireMode:
                 color=SIMULATION_POINT_TYPE_COLOR,
                 tooltip=["Time:Q", f"{X}:Q", f"{Y}:Q"],
             )
+            .properties(width=width)
             .interactive()
         )
 
