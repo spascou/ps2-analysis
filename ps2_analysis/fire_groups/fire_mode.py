@@ -713,7 +713,7 @@ class FireMode:
                     f"{Y}:Q", axis=altair.Axis(title="vertical angle (degrees)")
                 ),
                 color=SIMULATION_POINT_TYPE_COLOR,
-                tooltip=["Time:Q", "{X}:Q", "{Y}:Q"],
+                tooltip=["Time:Q", f"{X}:Q", f"{Y}:Q"],
             )
             .interactive()
         )
