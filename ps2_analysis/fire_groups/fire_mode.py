@@ -667,6 +667,7 @@ class FireMode:
         recentering_inertia_factor: float = 0.3,
         player_state: PlayerState = PlayerState.STANDING,
         width: Union[int, str] = "container",
+        height: Union[int, str] = "container",
     ) -> altair.HConcatChart:
 
         datapoints: List[dict] = []
@@ -716,7 +717,7 @@ class FireMode:
                 color=SIMULATION_POINT_TYPE_COLOR,
                 tooltip=["Time:Q", f"{X}:Q", f"{Y}:Q"],
             )
-            .properties(width=width)
+            .properties(width=width, height=height)
             .interactive()
         )
 
