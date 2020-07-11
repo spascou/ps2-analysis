@@ -1,71 +1,50 @@
+import functools
 import math
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterator, Optional, Tuple
 
-from ps2_analysis.utils import damage_to_kill, float_range
+import methodtools
 
-
-class DamageLocation(str, Enum):
-    HEAD = "head"
-    LEGS = "legs"
-    TORSO = "torso"
+from ps2_analysis.enums import DamageLocation
+from ps2_analysis.utils import damage_to_kill, float_range, locational_linear_falloff
 
 
 @dataclass
 class DamageProfile:
-    # Base damage
     max_damage: int
     max_damage_range: float
     min_damage: int
     min_damage_range: float
-
-    # Pellets
     pellets_count: int
-
-    # Locational modifiers
     location_multiplier: Dict[DamageLocation, float] = field(default_factory=dict)
-
-    # Effect
     effect: Dict[str, str] = field(default_factory=dict)
 
-    @property
+    @functools.cached_property
     def damage_delta(self) -> int:
 
         return self.max_damage - self.min_damage
 
-    @property
+    @functools.cached_property
     def damage_range_delta(self) -> float:
 
         return self.min_damage_range - self.max_damage_range
 
+    @methodtools.lru_cache()
     def damage_per_pellet(
         self, distance: float, location: DamageLocation = DamageLocation.TORSO
     ) -> int:
 
-        damage: float
-
-        if self.damage_delta == 0 or distance <= self.max_damage_range:
-
-            damage = self.max_damage
-
-        elif distance >= self.min_damage_range:
-
-            damage = self.min_damage
-
-        else:
-
-            damage = self.min_damage * (
-                1
-                - (distance - self.min_damage_range)
-                / (self.max_damage_range - self.min_damage_range)
-            ) + self.max_damage * (
-                (distance - self.min_damage_range)
-                / (self.max_damage_range - self.min_damage_range)
-            )
+        damage: float = locational_linear_falloff(
+            x=distance,
+            x_0=self.max_damage_range,
+            y_0=self.max_damage,
+            x_1=self.min_damage_range,
+            y_1=self.min_damage,
+        )
 
         return int(math.floor(damage * self.location_multiplier.get(location, 1.0)))
 
+    @methodtools.lru_cache()
     def damage_per_shot(
         self, distance: float, location: DamageLocation = DamageLocation.TORSO
     ) -> int:
@@ -74,6 +53,7 @@ class DamageProfile:
             distance=distance, location=location
         )
 
+    @methodtools.lru_cache()
     def shots_to_kill(
         self,
         distance: float,
@@ -85,7 +65,7 @@ class DamageProfile:
 
         dps: int = self.damage_per_shot(distance=distance, location=location)
 
-        if dps > 0:
+        if dps != 0:
 
             return int(
                 math.ceil(
@@ -98,9 +78,7 @@ class DamageProfile:
                 )
             )
 
-        else:
-
-            return -1
+        return -1
 
     def shots_to_kill_ranges(
         self,
@@ -110,9 +88,7 @@ class DamageProfile:
         damage_resistance: float = 0.0,
         step: float = 0.1,
         precision_decimals: int = 2,
-    ) -> List[Tuple[float, int]]:
-
-        stk_ranges: List[Tuple[float, int]] = []
+    ) -> Iterator[Tuple[float, int]]:
 
         if self.damage_range_delta > 0:
 
@@ -134,27 +110,23 @@ class DamageProfile:
 
                     if r >= step:
 
-                        stk_ranges.append((round(r - step, precision_decimals), stk))
+                        yield (round(r - step, precision_decimals), stk)
 
                     else:
 
-                        stk_ranges.append((r, stk))
+                        yield (r, stk)
 
                 previous_stk = stk
 
         else:
 
-            stk_ranges.append(
-                (
-                    0.0,
-                    self.shots_to_kill(
-                        distance=self.max_damage_range,
-                        location=location,
-                        health=health,
-                        shields=shields,
-                        damage_resistance=damage_resistance,
-                    ),
-                )
+            yield (
+                0.0,
+                self.shots_to_kill(
+                    distance=self.max_damage_range,
+                    location=location,
+                    health=health,
+                    shields=shields,
+                    damage_resistance=damage_resistance,
+                ),
             )
-
-        return stk_ranges

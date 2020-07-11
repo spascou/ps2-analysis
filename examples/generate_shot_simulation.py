@@ -10,7 +10,7 @@ from ps2_analysis.fire_groups.data_files import (
 from ps2_analysis.weapons.infantry.data_files import (
     update_data_files as update_infantry_weapons_data_files,
 )
-from ps2_analysis.weapons.infantry.generate import generate_infantry_weapons
+from ps2_analysis.weapons.infantry.generate import generate_all_infantry_weapons
 from ps2_analysis.weapons.infantry.infantry_weapon import InfantryWeapon
 
 logging.basicConfig(level=logging.INFO)
@@ -29,8 +29,8 @@ update_infantry_weapons_data_files(
     directory=DATAFILES_DIRECTORY, service_id=SERVICE_ID,
 )
 
-infantry_weapons: List[InfantryWeapon] = generate_infantry_weapons(
-    data_files_directory=DATAFILES_DIRECTORY
+infantry_weapons: List[InfantryWeapon] = list(
+    generate_all_infantry_weapons(data_files_directory=DATAFILES_DIRECTORY)
 )
 
 item_id_idx: Dict[int, InfantryWeapon] = {w.item_id: w for w in infantry_weapons}
@@ -45,7 +45,7 @@ if weapon:
 
         for fire_mode in fire_group.fire_modes:
 
-            fire_mode.generate_altair_simulation(
+            fire_mode.altair_simulate_shots(
                 shots=fire_mode.max_consecutive_shots, runs=10, recentering=False
             ).save(
                 f"{weapon.slug}_{fire_group.fire_group_id}_{fire_mode.fire_mode_id}.html"

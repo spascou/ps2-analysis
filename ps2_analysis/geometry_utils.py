@@ -1,9 +1,11 @@
+import functools
 from typing import Optional
 
 from ps2_analysis.fire_groups.damage_profile import DamageLocation
 
 
-def determine_planetman_hit_location(
+@functools.lru_cache
+def planetman_hit_location(
     x: float,
     y: float,
     aim_location: DamageLocation = DamageLocation.TORSO,

@@ -1,3 +1,4 @@
+import functools
 from dataclasses import dataclass
 from typing import Optional
 
@@ -6,27 +7,20 @@ from ps2_census.enums import ProjectileFlightType
 
 @dataclass
 class Projectile:
-    # Speed
     speed: float
-    max_speed: Optional[float]
-    acceleration: Optional[float]
-
-    # Trajectory
-    flight_type: ProjectileFlightType
-    gravity: Optional[float]
-    turn_rate: Optional[float]
-
-    # Misc
+    gravity: float
     life_time: int
-    drag: Optional[float]
+    flight_type: ProjectileFlightType
+    drag: float
+    max_speed: Optional[float] = None
+    acceleration: Optional[float] = None
+    turn_rate: Optional[float] = None
 
-    @property
+    @functools.cached_property
     def max_range(self) -> float:
 
         if self.life_time:
 
             return self.speed * (self.life_time / 1_000)
 
-        else:
-
-            return -1
+        return -1

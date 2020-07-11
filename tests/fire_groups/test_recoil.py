@@ -14,7 +14,6 @@ def test_half_horizontal_tolerance():
         horizontal_tolerance=2.0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -34,7 +33,6 @@ def test_half_horizontal_tolerance():
         horizontal_tolerance=None,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -56,7 +54,6 @@ def test_max_tolerated_horizontal_kicks():
         horizontal_tolerance=1.8,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -76,7 +73,6 @@ def test_max_tolerated_horizontal_kicks():
         horizontal_tolerance=2.0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -96,13 +92,12 @@ def test_max_tolerated_horizontal_kicks():
         horizontal_tolerance=None,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
     )
 
-    assert recoil.max_tolerated_horizontal_kicks is None
+    assert recoil.max_tolerated_horizontal_kicks == -1
 
 
 def test_max_horizontal_deviation():
@@ -118,7 +113,6 @@ def test_max_horizontal_deviation():
         horizontal_tolerance=2.0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -138,13 +132,12 @@ def test_max_horizontal_deviation():
         horizontal_tolerance=None,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
     )
 
-    assert recoil.max_horizontal_deviation is None
+    assert recoil.max_horizontal_deviation == -1
 
 
 def test_angle_delta():
@@ -157,10 +150,8 @@ def test_angle_delta():
         vertical_crouched_increase=0.0,
         max_horizontal=4.0,
         min_horizontal=1.0,
-        horizontal_tolerance=0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -177,10 +168,8 @@ def test_angle_delta():
         vertical_crouched_increase=0.0,
         max_horizontal=0.0,
         min_horizontal=0.0,
-        horizontal_tolerance=0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -199,10 +188,8 @@ def test_horizontal_delta():
         vertical_crouched_increase=0.0,
         max_horizontal=4.0,
         min_horizontal=1.0,
-        horizontal_tolerance=0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -219,10 +206,8 @@ def test_horizontal_delta():
         vertical_crouched_increase=0.0,
         max_horizontal=4.0,
         min_horizontal=4.0,
-        horizontal_tolerance=0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -241,10 +226,8 @@ def test_vertical_delta():
         vertical_crouched_increase=0.0,
         max_horizontal=0.0,
         min_horizontal=0.0,
-        horizontal_tolerance=0.0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,
@@ -261,10 +244,8 @@ def test_vertical_delta():
         vertical_crouched_increase=0.0,
         max_horizontal=0.0,
         min_horizontal=0.0,
-        horizontal_tolerance=0.0,
         max_horizontal_increase=0.0,
         min_horizontal_increase=0.0,
-        recovery_acceleration=0.0,
         recovery_delay=0.0,
         recovery_rate=0.0,
         first_shot_multiplier=1.0,

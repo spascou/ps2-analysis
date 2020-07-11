@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Optional
+from typing import Iterator, Optional
 
 from ps2_analysis.fire_groups.data_files import (
     load_data_files as load_fire_groups_data_files,
@@ -20,7 +20,7 @@ update_fire_groups_data_files(
     directory=DATAFILES_DIRECTORY, service_id=SERVICE_ID,
 )
 
-data: List[dict] = load_fire_groups_data_files(directory=DATAFILES_DIRECTORY)
+data: Iterator[dict] = load_fire_groups_data_files(directory=DATAFILES_DIRECTORY)
 
 print(
     json.dumps(

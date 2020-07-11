@@ -1,6 +1,18 @@
 import decimal
+import functools
 import math
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Set, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Union,
+)
 
 
 def discover(data: Iterable[dict], path: str = "") -> Dict[str, Set[str]]:
@@ -52,7 +64,8 @@ def discover(data: Iterable[dict], path: str = "") -> Dict[str, Set[str]]:
     return res
 
 
-def get(mapping: Mapping, key: str, typer: Callable[[str], Any]):
+def get(mapping: Mapping, key: str, typer: Callable[[str], Any]) -> Any:
+
     return typer(mapping[key])
 
 
@@ -61,7 +74,8 @@ def optget(
     key: str,
     typer: Callable[[str], Any],
     default: Optional[Any] = None,
-):
+) -> Any:
+
     if key in mapping:
 
         return get(mapping=mapping, key=key, typer=typer)
@@ -71,22 +85,41 @@ def optget(
         return default
 
 
-def float_range(
+@functools.lru_cache
+def float_range_list(
     start: Union[int, float],
     stop: Union[int, float],
     step: Union[int, float],
     precision_decimals: int = 2,
-):
+) -> List[float]:
+
+    result: List[float] = []
+
     start_d = decimal.Decimal(start)
     stop_d = decimal.Decimal(stop)
 
     while start_d < stop_d:
 
-        yield round(float(start_d), precision_decimals)
+        result.append(round(float(start_d), precision_decimals))
 
         start_d += decimal.Decimal(step)
 
+    return result
 
+
+def float_range(
+    start: Union[int, float],
+    stop: Union[int, float],
+    step: Union[int, float],
+    precision_decimals: int = 2,
+) -> Iterator[float]:
+
+    yield from float_range_list(
+        start=start, stop=stop, step=step, precision_decimals=precision_decimals
+    )
+
+
+@functools.lru_cache
 def damage_to_kill(
     health: int = 500, shields: int = 500, damage_resistance: float = 0.0
 ) -> int:
@@ -98,3 +131,21 @@ def damage_to_kill(
     else:
 
         return -1
+
+
+@functools.lru_cache
+def locational_linear_falloff(
+    x: float, x_0: float, y_0: float, x_1: float, y_1: float
+) -> float:
+
+    if y_0 == y_1 or x <= x_0:
+
+        return y_0
+
+    elif x >= x_1:
+
+        return y_1
+
+    else:
+
+        return y_1 * (1 - (x - x_1) / (x_0 - x_1)) + y_0 * ((x - x_1) / (x_0 - x_1))

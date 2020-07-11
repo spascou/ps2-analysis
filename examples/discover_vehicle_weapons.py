@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Optional
+from typing import Iterator, Optional
 
 from ps2_analysis.utils import discover
 from ps2_analysis.weapons.vehicle.data_files import (
@@ -20,7 +20,7 @@ update_vehicle_weapons_data_files(
     directory=DATAFILES_DIRECTORY, service_id=SERVICE_ID,
 )
 
-data: List[dict] = load_vehicle_weapons_data_files(directory=DATAFILES_DIRECTORY)
+data: Iterator[dict] = load_vehicle_weapons_data_files(directory=DATAFILES_DIRECTORY)
 
 print(
     json.dumps(

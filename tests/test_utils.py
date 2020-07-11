@@ -1,4 +1,10 @@
-from ps2_analysis.utils import discover, float_range, get, optget
+from ps2_analysis.utils import (
+    discover,
+    float_range,
+    get,
+    locational_linear_falloff,
+    optget,
+)
 
 
 def test_discover():
@@ -44,3 +50,11 @@ def test_float_range():
         1.3,
         1.4,
     ]
+
+
+def test_locational_linear_falloff():
+    assert locational_linear_falloff(0.0, 10.0, 200.0, 20.0, 100.0) == 200.0
+    assert locational_linear_falloff(10.0, 10.0, 200.0, 20.0, 100.0) == 200.0
+    assert locational_linear_falloff(15.0, 10.0, 200.0, 20.0, 100.0) == 150.0
+    assert locational_linear_falloff(20.0, 10.0, 200.0, 20.0, 100.0) == 100.0
+    assert locational_linear_falloff(30.0, 10.0, 200.0, 20.0, 100.0) == 100.0

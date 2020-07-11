@@ -1,10 +1,12 @@
+import functools
 import math
 import random
 import statistics
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Iterator, List, Literal, Optional, Tuple
 
 import altair
+import methodtools
 from ps2_census.enums import FireModeType, PlayerState
 
 from ps2_analysis.altair_utils import (
@@ -13,114 +15,89 @@ from ps2_analysis.altair_utils import (
     X,
     Y,
 )
-from ps2_analysis.geometry_utils import determine_planetman_hit_location
+from ps2_analysis.enums import DamageLocation
+from ps2_analysis.geometry_utils import planetman_hit_location
 from ps2_analysis.utils import damage_to_kill, float_range
 
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
-from .damage_profile import DamageLocation, DamageProfile
+from .damage_profile import DamageProfile
 from .fire_timing import FireTiming
 from .heat import Heat
 from .projectile import Projectile
 from .recoil import Recoil
 
-srandom = random.SystemRandom()
-
 
 @dataclass
 class FireMode:
-    # Basic information
     fire_mode_id: int
-    type: FireModeType
+    fire_mode_type: FireModeType
     description: str
     is_ads: bool
     detect_range: float
-
-    # Movement modifiers
     move_multiplier: float
     turn_multiplier: float
-
-    # Damage profiles
-    direct_damage_profile: Optional[DamageProfile]
-    indirect_damage_profile: Optional[DamageProfile]
-
-    # Zoom
     zoom: float
-
-    # Sway
-    sway_can_steady: Optional[bool]
-    sway_amplitude_x: Optional[float]
-    sway_amplitude_y: Optional[float]
-    sway_period_x: Optional[float]
-    sway_period_y: Optional[float]
-
-    # Ammo
-    ammo: Optional[Ammo]
-
-    # Heat
-    heat: Optional[Heat]
-
-    # Fire timing
     fire_timing: FireTiming
-
-    # Recoil
     recoil: Recoil
+    player_state_cone_of_fire: Dict[PlayerState, ConeOfFire] = field(
+        default_factory=dict
+    )
+    player_state_can_ads: Dict[PlayerState, bool] = field(default_factory=dict)
+    projectile: Optional[Projectile] = None
+    direct_damage_profile: Optional[DamageProfile] = None
+    indirect_damage_profile: Optional[DamageProfile] = None
+    sway_can_steady: Optional[bool] = None
+    sway_amplitude_x: Optional[float] = None
+    sway_amplitude_y: Optional[float] = None
+    sway_period_x: Optional[float] = None
+    sway_period_y: Optional[float] = None
+    ammo: Optional[Ammo] = None
+    heat: Optional[Heat] = None
 
-    # Projectile
-    projectile: Optional[Projectile]
-
-    # Player state cones of fire
-    player_state_cone_of_fire: Dict[PlayerState, ConeOfFire]
-
-    # Player state can ads
-    player_state_can_ads: Dict[PlayerState, bool]
-
-    @property
+    @functools.cached_property
     def max_consecutive_shots(self) -> int:
 
-        max_consecutive_shots: int
-
         if self.heat:
 
-            max_consecutive_shots = self.heat.shots_before_overheat
+            return self.heat.shots_before_overheat
 
         elif self.ammo:
 
-            max_consecutive_shots = self.ammo.shots_per_clip
+            return self.ammo.shots_per_clip
 
         else:
 
-            raise ValueError("No Ammo nor Heat available")
+            return -1
 
-        return max_consecutive_shots
-
-    @property
+    @functools.cached_property
     def reload_time(self) -> int:
 
-        reload_time: int
-
         if self.heat:
 
-            reload_time = self.heat.recovery_time(
-                heat=self.max_consecutive_shots * self.heat.heat_per_shot
-            )
+            if self.max_consecutive_shots >= 0:
+
+                return self.heat.recovery_time(
+                    heat=self.max_consecutive_shots * self.heat.heat_per_shot
+                )
+
+            else:
+
+                return -1
 
         elif self.ammo:
 
-            reload_time = self.ammo.long_reload_time
+            return self.ammo.long_reload_time
 
         else:
 
-            raise ValueError("No Ammo nor Heat available")
+            return -1
 
-        return reload_time
-
-    @property
+    @functools.cached_property
     def shots_per_minute(self) -> int:
 
         shots: int
         time: int
-        spm: int
 
         if (
             self.fire_timing.burst_length
@@ -149,14 +126,13 @@ class FireMode:
 
         if time > 0:
 
-            spm = int(math.floor(60_000 * shots / time))
+            return int(math.floor(60_000 * shots / time))
 
         else:
 
-            spm = 0
+            return 0
 
-        return spm
-
+    @methodtools.lru_cache()
     def damage_per_pellet(
         self, distance: float, location: DamageLocation = DamageLocation.TORSO
     ) -> int:
@@ -179,6 +155,7 @@ class FireMode:
 
         return direct_damage + indirect_damage
 
+    @methodtools.lru_cache()
     def damage_per_shot(
         self, distance: float, location: DamageLocation = DamageLocation.TORSO
     ) -> int:
@@ -201,6 +178,7 @@ class FireMode:
 
         return direct_damage + indirect_damage
 
+    @methodtools.lru_cache()
     def shots_to_kill(
         self,
         distance: float,
@@ -212,7 +190,7 @@ class FireMode:
 
         dps: int = self.damage_per_shot(distance=distance, location=location)
 
-        if dps > 0:
+        if dps != 0:
 
             return int(
                 math.ceil(
@@ -237,20 +215,21 @@ class FireMode:
         damage_resistance: float = 0.0,
         step: float = 0.1,
         precision_decimals: int = 2,
-    ) -> List[Tuple[float, int]]:
-
-        stk_ranges: List[Tuple[float, int]] = []
+    ) -> Iterator[Tuple[float, int]]:
 
         if self.direct_damage_profile:
+
             if self.direct_damage_profile.damage_range_delta > 0:
+
                 previous_stk: Optional[int] = None
 
                 for r in float_range(
-                    0,
+                    0.0,
                     self.direct_damage_profile.min_damage_range + step,
                     step,
                     precision_decimals,
                 ):
+
                     stk: int = self.shots_to_kill(
                         distance=r,
                         location=location,
@@ -260,45 +239,42 @@ class FireMode:
                     )
 
                     if previous_stk is None or stk != previous_stk:
+
                         if r >= step:
-                            stk_ranges.append(
-                                (round(r - step, precision_decimals), stk)
-                            )
+
+                            yield (round(r - step, precision_decimals), stk)
+
                         else:
-                            stk_ranges.append((r, stk))
+
+                            yield (r, stk)
 
                     previous_stk = stk
+
             else:
 
-                stk_ranges.append(
-                    (
-                        0.0,
-                        self.shots_to_kill(
-                            distance=self.direct_damage_profile.max_damage_range,
-                            location=location,
-                            health=health,
-                            shields=shields,
-                            damage_resistance=damage_resistance,
-                        ),
-                    )
-                )
-
-        elif self.indirect_damage_profile:
-
-            stk_ranges.append(
-                (
+                yield (
                     0.0,
                     self.shots_to_kill(
-                        distance=0,
+                        distance=self.direct_damage_profile.max_damage_range,
                         location=location,
                         health=health,
                         shields=shields,
                         damage_resistance=damage_resistance,
                     ),
                 )
-            )
 
-        return stk_ranges
+        elif self.indirect_damage_profile:
+
+            yield (
+                0.0,
+                self.shots_to_kill(
+                    distance=0.0,
+                    location=location,
+                    health=health,
+                    shields=shields,
+                    damage_resistance=damage_resistance,
+                ),
+            )
 
     def generate_real_shot_timings(
         self,
@@ -308,7 +284,10 @@ class FireMode:
     ) -> Iterator[Tuple[int, bool]]:
 
         if shots == 0:
-            raise ValueError("Cannot simulate 0 shots")
+
+            yield (0, False)
+
+            return
 
         reloads: int = 0
         remaining: int = shots
@@ -362,8 +341,13 @@ class FireMode:
         recentering_inertia_factor: float = 0.7,
     ) -> Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
 
+        srandom = random.SystemRandom()
+
         if shots == 0:
-            raise ValueError("Cannot simulate 0 shots")
+
+            yield (0, (0, 0), [])
+
+            return
 
         # Cone of fire at player state
         cof: ConeOfFire = self.player_state_cone_of_fire[player_state]
@@ -374,13 +358,13 @@ class FireMode:
         curr_y = 0.0
 
         # Recoil parameters
-        curr_max_vertical_recoil: float = self.recoil.max_vertical or 0.0
-        curr_min_vertical_recoil: float = self.recoil.min_vertical or 0.0
-        curr_max_horizontal_recoil: float = self.recoil.max_horizontal or 0.0
-        curr_min_horizontal_recoil: float = self.recoil.min_horizontal or 0.0
+        curr_max_vertical_recoil: float = self.recoil.max_vertical
+        curr_min_vertical_recoil: float = self.recoil.min_vertical
+        curr_max_horizontal_recoil: float = self.recoil.max_horizontal
+        curr_min_horizontal_recoil: float = self.recoil.min_horizontal
 
         # CoF parameters
-        curr_cof_angle: float = cof.min_angle * cof.multiplier
+        curr_cof_angle: float = cof.min_cof_angle()
 
         # Loop
         previous_t: int = 0
@@ -405,28 +389,19 @@ class FireMode:
                 # CoF
                 ########################################################################
 
-                cof_recovery_delay: int = self.fire_timing.refire_time + (
-                    cof.recovery_delay or 0
-                )
-                min_cof_angle: float = cof.min_angle * cof.multiplier
-                max_cof_angle: float = cof.max_angle * cof.multiplier
+                cof_recovery_delay: int = self.fire_timing.refire_time + cof.recovery_delay
 
                 # Under recovery delay -- bloom CoF
                 if delta <= cof_recovery_delay:
 
-                    # Bloom if didn't reach max value
-                    if curr_cof_angle < max_cof_angle:
-
-                        curr_cof_angle += cof.bloom
-                        curr_cof_angle = min(curr_cof_angle, max_cof_angle)
+                    curr_cof_angle = cof.apply_bloom(current=curr_cof_angle)
 
                 # Above recovery delay -- recover CoF
-                elif cof.recovery_rate:
+                else:
 
-                    curr_cof_angle -= (cof.recovery_rate / 1_000) * (
-                        delta - cof_recovery_delay
+                    curr_cof_angle = cof.recover(
+                        current=curr_cof_angle, time=delta - cof_recovery_delay
                     )
-                    curr_cof_angle = max(curr_cof_angle, min_cof_angle)
 
                 # Recoil
                 ########################################################################
@@ -437,89 +412,31 @@ class FireMode:
                 if delta <= recoil_recovery_delay:
 
                     # Vertical
-                    if self.recoil.vertical_increase > 0:
-                        if curr_min_vertical_recoil < curr_max_vertical_recoil:
-
-                            curr_min_vertical_recoil += self.recoil.vertical_increase
-                            curr_min_vertical_recoil = min(
-                                curr_min_vertical_recoil, curr_max_vertical_recoil
-                            )
-
-                    elif self.recoil.vertical_increase < 0:
-                        if curr_max_vertical_recoil > curr_min_vertical_recoil:
-
-                            curr_max_vertical_recoil += self.recoil.vertical_increase
-                            curr_max_vertical_recoil = max(
-                                curr_min_vertical_recoil, curr_max_vertical_recoil
-                            )
-
-                    # Min horizontal
-                    if self.recoil.min_horizontal_increase < 0:
-                        if curr_min_horizontal_recoil > 0:
-
-                            curr_min_horizontal_recoil += (
-                                self.recoil.min_horizontal_increase
-                            )
-                            curr_min_horizontal_recoil = max(
-                                0, curr_min_horizontal_recoil
-                            )
-
-                    elif self.recoil.min_horizontal_increase > 0:
-                        if curr_min_horizontal_recoil < curr_max_horizontal_recoil:
-
-                            curr_min_horizontal_recoil += (
-                                self.recoil.min_horizontal_increase
-                            )
-                            curr_min_horizontal_recoil = min(
-                                curr_min_horizontal_recoil, curr_max_horizontal_recoil,
-                            )
-
-                    # Max horizontal
-                    if self.recoil.max_horizontal_increase > 0:
-
-                        curr_max_horizontal_recoil += (
-                            self.recoil.max_horizontal_increase
-                        )
-
-                    elif self.recoil.max_horizontal_increase < 0:
-                        if curr_max_horizontal_recoil > curr_min_horizontal_recoil:
-
-                            curr_max_horizontal_recoil += (
-                                self.recoil.max_horizontal_increase
-                            )
-                            curr_max_horizontal_recoil = max(
-                                curr_min_horizontal_recoil, curr_max_horizontal_recoil,
-                            )
-
-                # Above recovery delay and have a recovery rate -- recover recoil
-                elif self.recoil.recovery_rate:
-
-                    full_recoil_recovery_delay: int = recoil_recovery_delay + int(
-                        math.ceil(
-                            math.sqrt(curr_x ** 2 + curr_y ** 2)
-                            / (self.recoil.recovery_rate / 1_000)
-                        )
+                    (
+                        curr_min_vertical_recoil,
+                        curr_max_vertical_recoil,
+                    ) = self.recoil.scale_vertical(
+                        current_min=curr_min_vertical_recoil,
+                        current_max=curr_max_vertical_recoil,
                     )
 
-                    # Below full recovery -- partially recover recoil
-                    if delta <= full_recoil_recovery_delay:
+                    # Horizontal
+                    (
+                        curr_min_horizontal_recoil,
+                        curr_max_horizontal_recoil,
+                    ) = self.recoil.scale_horizontal(
+                        current_min=curr_min_horizontal_recoil,
+                        current_max=curr_max_horizontal_recoil,
+                    )
 
-                        curr_x -= (
-                            (delta - recoil_recovery_delay)
-                            * (self.recoil.recovery_rate / 1_000)
-                            * math.sin(math.atan(curr_x / curr_y))
-                        )
-                        curr_y -= (
-                            (delta - recoil_recovery_delay)
-                            * (self.recoil.recovery_rate / 1_000)
-                            * math.cos(math.atan(curr_x / curr_y))
-                        )
+                # Above recovery delay and have a recovery rate -- recover recoil
+                else:
 
-                    # Above full recovery -- recenter to initial position
-                    else:
-
-                        curr_x = 0.0
-                        curr_y = 0.0
+                    curr_x, curr_y = self.recoil.recover(
+                        current_x=curr_x,
+                        current_y=curr_y,
+                        time=delta - recoil_recovery_delay,
+                    )
 
             # Recentering
             ############################################################################
@@ -585,13 +502,17 @@ class FireMode:
                 cof_angle = srandom.uniform(0, curr_cof_angle)
                 cof_orientation = srandom.uniform(0, 360)
 
-                cof_h = cof_angle * math.cos(math.radians(cof_orientation))
-                cof_v = cof_angle * math.sin(math.radians(cof_orientation))
+                cof_orientation_radians: float = math.radians(cof_orientation)
+
+                cof_h = cof_angle * math.cos(cof_orientation_radians)
+                cof_v = cof_angle * math.sin(cof_orientation_radians)
 
             # Individual pellets position
             for _ in range(
                 self.direct_damage_profile.pellets_count
                 if self.direct_damage_profile is not None
+                else self.indirect_damage_profile.pellets_count
+                if self.indirect_damage_profile is not None
                 else 1
             ):
 
@@ -605,8 +526,10 @@ class FireMode:
                     pellet_angle = srandom.uniform(0, cof.pellet_spread)
                     pellet_orientation = srandom.uniform(0, 360)
 
-                    pellet_h = pellet_angle * math.cos(math.radians(pellet_orientation))
-                    pellet_v = pellet_angle * math.sin(math.radians(pellet_orientation))
+                    pellet_orientation_radians: float = math.radians(pellet_orientation)
+
+                    pellet_h = pellet_angle * math.cos(pellet_orientation_radians)
+                    pellet_v = pellet_angle * math.sin(pellet_orientation_radians)
 
                     curr_result[2].append(
                         (curr_x + cof_h + pellet_h, curr_y + cof_v + pellet_v)
@@ -653,11 +576,7 @@ class FireMode:
             # Recoil angle
             recoil_a: float
 
-            if (
-                (self.recoil.max_angle, self.recoil.min_angle) == (0.0, 0.0)
-                or self.recoil.min_angle is None
-                or self.recoil.max_angle is None
-            ):
+            if (self.recoil.max_angle, self.recoil.min_angle) == (0.0, 0.0):
 
                 recoil_a = 0.0
 
@@ -675,14 +594,14 @@ class FireMode:
 
             if self.recoil.half_horizontal_tolerance:
 
+                rta: float = math.tan(math.radians(90 - recoil_a))
+
                 left_bound: float = (
-                    (curr_y - self.recoil.half_horizontal_tolerance)
-                    / math.tan(math.radians(90 - recoil_a))
+                    (curr_y - self.recoil.half_horizontal_tolerance) / rta
                 ) if recoil_a != 0.0 else -self.recoil.half_horizontal_tolerance
 
                 right_bound: float = (
-                    (curr_y + self.recoil.half_horizontal_tolerance)
-                    / math.tan(math.radians(90 - recoil_a))
+                    (curr_y + self.recoil.half_horizontal_tolerance) / rta
                 ) if recoil_a != 0.0 else self.recoil.half_horizontal_tolerance
 
                 if left_bound <= curr_x <= right_bound:
@@ -716,13 +635,17 @@ class FireMode:
 
             else:
 
-                recoil_h_angled = recoil_h * math.cos(
-                    math.radians(recoil_a)
-                ) + recoil_v * math.sin(math.radians(recoil_a))
+                recoil_a_radians: float = math.radians(recoil_a)
+                sin_recoil_a_radians: float = math.sin(recoil_a_radians)
+                cos_recoil_a_radians: float = math.cos(recoil_a_radians)
 
-                recoil_v_angled = -recoil_h * math.sin(
-                    math.radians(recoil_a)
-                ) + recoil_v * math.cos(math.radians(recoil_a))
+                recoil_h_angled = (
+                    recoil_h * cos_recoil_a_radians + recoil_v * sin_recoil_a_radians
+                )
+
+                recoil_v_angled = (
+                    -recoil_h * sin_recoil_a_radians + recoil_v * cos_recoil_a_radians
+                )
 
             # Yield
             yield curr_result
@@ -733,96 +656,7 @@ class FireMode:
 
             previous_t = t
 
-    def damage_inflicted_by_pellets(
-        self,
-        distance: float,
-        pellets: List[Tuple[float, float]],
-        aim_location: DamageLocation = DamageLocation.TORSO,
-    ) -> int:
-
-        damage: int = 0
-
-        pellet_h_angle: float
-        pellet_v_angle: float
-        for pellet_h_angle, pellet_v_angle in pellets:
-            pellet_x: float = math.tan(math.radians(pellet_h_angle)) * distance
-            pellet_y: float = math.tan(math.radians(pellet_v_angle)) * distance
-
-            hit_location: Optional[DamageLocation] = determine_planetman_hit_location(
-                x=pellet_x, y=pellet_y, aim_location=aim_location
-            )
-
-            damage += (
-                self.damage_per_pellet(distance=distance, location=hit_location)
-                if hit_location
-                else 0
-            )
-
-        return damage
-
-    def real_time_to_kill(
-        self,
-        distance: float = 1.0,
-        runs: int = 1,
-        max_time: int = 20_000,
-        control_time: int = 0,
-        health: int = 500,
-        shields: int = 500,
-        damage_resistance: float = 0.0,
-        auto_burst_length: Optional[int] = None,
-        aim_location: DamageLocation = DamageLocation.TORSO,
-        player_state: PlayerState = PlayerState.STANDING,
-        recentering: bool = False,
-        recentering_response_time: int = 1_000,
-        recentering_inertia_factor: float = 0.7,
-    ) -> int:
-
-        if not self.direct_damage_profile and not self.indirect_damage_profile:
-            return -1
-
-        ttks: List[int] = []
-
-        dtk: int = damage_to_kill(
-            health=health, shields=shields, damage_resistance=damage_resistance
-        )
-
-        simulation: Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
-        for simulation in (
-            self.simulate_shots(
-                shots=-1,
-                control_time=control_time,
-                auto_burst_length=auto_burst_length,
-                recentering=recentering,
-                recentering_response_time=recentering_response_time,
-                recentering_inertia_factor=recentering_inertia_factor,
-                player_state=player_state,
-            )
-            for _ in range(runs)
-        ):
-
-            total_damage: int = 0
-
-            t: int
-            pellets_coors: List[Tuple[float, float]]
-            for t, _, pellets_coors in simulation:
-
-                if t > max_time:
-
-                    break
-
-                total_damage += self.damage_inflicted_by_pellets(
-                    distance=distance, pellets=pellets_coors, aim_location=aim_location
-                )
-
-                if total_damage >= dtk:
-
-                    ttks.append(t)
-
-                    break
-
-        return int(math.ceil(statistics.median(ttks))) if ttks else -1
-
-    def generate_altair_simulation(
+    def altair_simulate_shots(
         self,
         shots: int,
         runs: int = 1,
@@ -879,7 +713,7 @@ class FireMode:
                     f"{Y}:Q", axis=altair.Axis(title="vertical angle (degrees)")
                 ),
                 color=SIMULATION_POINT_TYPE_COLOR,
-                tooltip="Time:Q",
+                tooltip=["Time:Q", "{X}:Q", "{Y}:Q"],
             )
             .interactive()
         )
@@ -897,3 +731,99 @@ class FireMode:
         result: altair.HConcatChart = altair.hconcat(chart, legend)
 
         return result
+
+    def damage_inflicted_by_pellets(
+        self,
+        distance: float,
+        pellets: List[Tuple[float, float]],
+        aim_location: DamageLocation = DamageLocation.TORSO,
+    ) -> int:
+
+        damage: int = 0
+
+        pellet_h_angle: float
+        pellet_v_angle: float
+
+        for pellet_h_angle, pellet_v_angle in pellets:
+
+            pellet_x: float = math.tan(math.radians(pellet_h_angle)) * distance
+            pellet_y: float = math.tan(math.radians(pellet_v_angle)) * distance
+
+            hit_location: Optional[DamageLocation] = planetman_hit_location(
+                x=pellet_x, y=pellet_y, aim_location=aim_location
+            )
+
+            damage += (
+                self.damage_per_pellet(distance=distance, location=hit_location)
+                if hit_location
+                else 0
+            )
+
+        return damage
+
+    def real_time_to_kill(
+        self,
+        distance: float = 1.0,
+        runs: int = 1,
+        max_time: int = 20_000,
+        control_time: int = 0,
+        health: int = 500,
+        shields: int = 500,
+        damage_resistance: float = 0.0,
+        auto_burst_length: Optional[int] = None,
+        aim_location: DamageLocation = DamageLocation.TORSO,
+        player_state: PlayerState = PlayerState.STANDING,
+        recentering: bool = False,
+        recentering_response_time: int = 1_000,
+        recentering_inertia_factor: float = 0.7,
+    ) -> int:
+
+        if not self.direct_damage_profile and not self.indirect_damage_profile:
+
+            return -1
+
+        ttks: List[int] = []
+
+        dtk: int = damage_to_kill(
+            health=health, shields=shields, damage_resistance=damage_resistance
+        )
+
+        if dtk == -1:
+
+            return -1
+
+        simulation: Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
+        for simulation in (
+            self.simulate_shots(
+                shots=-1,
+                control_time=control_time,
+                auto_burst_length=auto_burst_length,
+                recentering=recentering,
+                recentering_response_time=recentering_response_time,
+                recentering_inertia_factor=recentering_inertia_factor,
+                player_state=player_state,
+            )
+            for _ in range(runs)
+        ):
+
+            total_damage: int = 0
+
+            t: int
+            pellets_coors: List[Tuple[float, float]]
+            for t, _, pellets_coors in simulation:
+
+                if t > max_time:
+
+                    break
+
+                total_damage += self.damage_inflicted_by_pellets(
+                    distance=distance, pellets=pellets_coors, aim_location=aim_location
+                )
+
+                if total_damage >= dtk:
+
+                    ttks.append(t)
+
+                    break
+
+        return int(math.ceil(statistics.median(ttks))) if ttks else -1

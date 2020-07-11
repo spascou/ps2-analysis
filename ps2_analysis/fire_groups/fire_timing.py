@@ -1,66 +1,40 @@
-import math
+import functools
 from dataclasses import dataclass
 from typing import Iterator, Optional, Tuple
+
+import methodtools
 
 
 @dataclass
 class FireTiming:
-    # Basic information
     is_automatic: bool
     refire_time: int
-    fire_duration: Optional[int]
-
-    # Burst
-    burst_length: Optional[int]
-    burst_refire_time: Optional[int]
-
-    # Delay
+    fire_duration: int
     delay: int
-
-    # Charge
     charge_up_time: int
+    burst_length: Optional[int] = None
+    burst_refire_time: Optional[int] = None
+    spool_up_time: Optional[int] = None
+    spool_up_initial_refire_time: Optional[int] = None
+    chamber_time: Optional[int] = None
 
-    # Spooling
-    spool_up_time: Optional[int]
-    spool_up_initial_refire_time: Optional[int]
-
-    # Chambering
-    chamber_time: Optional[int]
-
-    @property
+    @functools.cached_property
     def total_delay(self) -> int:
 
         return (self.delay or 0) + (self.charge_up_time or 0)
 
-    def spooling_refire_time(self, t: int, linear_transition: bool = False) -> int:
+    @methodtools.lru_cache()
+    def spooling_refire_time(self, t: int) -> int:
 
         if self.spool_up_time and self.spool_up_initial_refire_time:
 
             if t < self.spool_up_time:
 
-                # For linear transition
-                if linear_transition is True:
-
-                    return int(
-                        math.ceil(
-                            self.spool_up_initial_refire_time
-                            + t
-                            * (self.refire_time - self.spool_up_initial_refire_time)
-                            / self.spool_up_time
-                        )
-                    )
-
-                # For step transition
-                else:
-
-                    return self.spool_up_initial_refire_time
-
-            else:
-
-                return self.refire_time
-        else:
+                return self.spool_up_initial_refire_time
 
             return self.refire_time
+
+        return self.refire_time
 
     def generate_shot_timings(
         self,
@@ -71,13 +45,17 @@ class FireTiming:
     ) -> Iterator[Tuple[int, bool]]:
 
         if shots == 0:
-            raise ValueError("Cannot simulate 0 shots")
+
+            yield (0, False)
+
+            return
 
         time: int = self.total_delay
         fired_shots: int = 0
         burst_fired_shots: int = 0
 
         fired_shots += 1
+
         yield (time, True)
 
         while fired_shots < shots:
@@ -137,10 +115,8 @@ class FireTiming:
 
             yield (time, first)
 
+    @methodtools.lru_cache()
     def time_to_fire_shots(self, shots: int, spool_cold_start: bool = True) -> int:
-
-        if shots == 0:
-            return -1
 
         return list(
             self.generate_shot_timings(shots=shots, spool_cold_start=spool_cold_start)

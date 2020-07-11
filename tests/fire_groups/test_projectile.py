@@ -6,13 +6,10 @@ from ps2_analysis.fire_groups.projectile import Projectile
 def test_max_range():
     projectile: Projectile = Projectile(
         speed=100,
-        max_speed=None,
-        acceleration=None,
-        flight_type=ProjectileFlightType.BALLISTIC,
-        gravity=None,
-        turn_rate=None,
+        gravity=0.0,
         life_time=3000,
-        drag=None,
+        flight_type=ProjectileFlightType.BALLISTIC,
+        drag=0.0,
     )
 
     assert projectile.max_range == 300

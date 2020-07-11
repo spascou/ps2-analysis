@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List, Optional, Set
+from typing import Dict, Iterator, Optional, Set
 
 import ndjson
 from ps2_census import Query
@@ -94,10 +94,15 @@ def update_data_files(
     print(f"Saved {total_items} items")
 
 
-def load_data_files(directory: str) -> List[Dict]:
-    filepath: str = "/".join((directory, DATA_FILENAME))
-    with open(filepath) as f:
-        data = ndjson.load(f)
+def load_data_files(directory: str) -> Iterator[Dict]:
 
-    print(f"Loaded {len(data)} items from {filepath}")
-    return data
+    filepath: str = "/".join((directory, DATA_FILENAME))
+
+    with open(filepath) as f:
+
+        reader = ndjson.reader(f)
+
+        d: dict
+        for d in reader:
+
+            yield d
