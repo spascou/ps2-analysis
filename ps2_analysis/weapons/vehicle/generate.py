@@ -46,9 +46,16 @@ def generate_all_vehicle_weapons(data_files_directory: str) -> Iterator[VehicleW
         load_fire_groups_data_files(directory=data_files_directory)
     )
 
+    # Index fire groups data by ID
+    all_fire_groups_data_id_idx: Dict[int, dict] = {
+        int(x["fire_group_id"]): x for x in all_fire_groups_data
+    }
+
     # Generate vehicle weapons
     yield from (
-        parse_vehicle_weapon_data(data=data, fire_groups_data=all_fire_groups_data,)
+        parse_vehicle_weapon_data(
+            data=data, fire_groups_data_id_idx=all_fire_groups_data_id_idx
+        )
         for data in filter(
             lambda x: (int(x["item_id"]) not in EXCLUDED_ITEM_IDS),
             all_vehicle_weapons_data,
@@ -57,12 +64,8 @@ def generate_all_vehicle_weapons(data_files_directory: str) -> Iterator[VehicleW
 
 
 def parse_vehicle_weapon_data(
-    data: dict, fire_groups_data: List[dict]
+    data: dict, fire_groups_data_id_idx: Dict[int, dict]
 ) -> VehicleWeapon:
-
-    fire_groups_id_idx: Dict[int, dict] = {
-        int(x["fire_group_id"]): x for x in fire_groups_data
-    }
 
     try:
         item_id: int = get(data, "item_id", int)
@@ -83,7 +86,7 @@ def parse_vehicle_weapon_data(
         ):
             fg_id: int = get(_fg, "fire_group_id", int)
 
-            fg: dict = fire_groups_id_idx[fg_id]
+            fg: dict = fire_groups_data_id_idx[fg_id]
 
             fire_groups.append(
                 parse_fire_group_data(
@@ -94,7 +97,6 @@ def parse_vehicle_weapon_data(
                         w, "heat_overheat_penalty_ms", int, 0
                     ),
                     heat_bleed_off_rate=optget(w, "heat_bleed_off_rate", int, 0),
-                    fire_groups_id_idx=fire_groups_id_idx,
                 )
             )
 
@@ -136,7 +138,7 @@ def parse_vehicle_weapon_data(
                 if eft["description"] == "Weapon Add Fire Group":
                     a_fg_id: int = get(p_zef, "FireGroupId", int)
 
-                    a_fg: dict = fire_groups_id_idx[a_fg_id]
+                    a_fg: dict = fire_groups_data_id_idx[a_fg_id]
 
                     attachment_fire_groups.append(
                         parse_fire_group_data(
@@ -145,7 +147,6 @@ def parse_vehicle_weapon_data(
                             ammo_total_capacity=0,
                             heat_overheat_penalty_time=0,
                             heat_bleed_off_rate=0,
-                            fire_groups_id_idx=fire_groups_id_idx,
                         )
                     )
 

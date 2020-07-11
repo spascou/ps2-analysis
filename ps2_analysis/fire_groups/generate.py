@@ -33,7 +33,6 @@ def parse_fire_group_data(
     ammo_total_capacity: int,
     heat_overheat_penalty_time: int,
     heat_bleed_off_rate: int,
-    fire_groups_id_idx: Dict[int, dict],
 ) -> FireGroup:
 
     fg_id: int = int(fg["fire_group_id"])
