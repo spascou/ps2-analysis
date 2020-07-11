@@ -717,7 +717,7 @@ class FireMode:
 
             else:
 
-                width = None
+                width = 0
 
         elif width:
 
@@ -727,7 +727,7 @@ class FireMode:
 
             else:
 
-                height = None
+                height = 0
 
         dataset: altair.Data = altair.Data(values=datapoints)
 
