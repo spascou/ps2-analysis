@@ -22,6 +22,26 @@ def test_shots_per_clip():
 
     assert ammo.shots_per_clip == 5
 
+    ammo: Ammo = Ammo(
+        clip_size=10,
+        total_capacity=100,
+        ammo_per_shot=0,
+        short_reload_time=0,
+        reload_chamber_time=0,
+    )
+
+    assert ammo.shots_per_clip == -1
+
+    ammo: Ammo = Ammo(
+        clip_size=0,
+        total_capacity=100,
+        ammo_per_shot=1,
+        short_reload_time=0,
+        reload_chamber_time=0,
+    )
+
+    assert ammo.shots_per_clip == 0
+
 
 def test_long_reload_time():
     ammo: Ammo = Ammo(

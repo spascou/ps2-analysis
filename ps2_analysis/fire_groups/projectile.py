@@ -19,7 +19,7 @@ class Projectile:
     @functools.cached_property
     def max_range(self) -> float:
 
-        if self.life_time:
+        if self.life_time >= 0:
 
             return self.speed * (self.life_time / 1_000)
 

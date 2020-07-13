@@ -13,3 +13,13 @@ def test_max_range():
     )
 
     assert projectile.max_range == 300
+
+    projectile: Projectile = Projectile(
+        speed=100,
+        gravity=0.0,
+        life_time=-1,
+        flight_type=ProjectileFlightType.BALLISTIC,
+        drag=0.0,
+    )
+
+    assert projectile.max_range == -1
