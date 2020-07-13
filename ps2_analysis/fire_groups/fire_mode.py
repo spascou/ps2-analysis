@@ -5,16 +5,9 @@ import statistics
 from dataclasses import dataclass, field
 from typing import Dict, Iterator, List, Literal, Optional, Tuple
 
-import altair
 import methodtools
 from ps2_census.enums import FireModeType, PlayerState
 
-from ps2_analysis.altair_utils import (
-    SIMULATION_POINT_TYPE_COLOR,
-    SIMULATION_POINT_TYPE_SELECTION,
-    X,
-    Y,
-)
 from ps2_analysis.enums import DamageLocation
 from ps2_analysis.geometry_utils import planetman_hit_location
 from ps2_analysis.utils import damage_to_kill, float_range
@@ -655,116 +648,6 @@ class FireMode:
             curr_y += recoil_v_angled
 
             previous_t = t
-
-    def altair_simulate_shots(
-        self,
-        shots: int,
-        runs: int = 1,
-        control_time: int = 0,
-        auto_burst_length: Optional[int] = None,
-        recentering: bool = False,
-        recentering_response_time: int = 1_000,
-        recentering_inertia_factor: float = 0.3,
-        player_state: PlayerState = PlayerState.STANDING,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-    ) -> altair.HConcatChart:
-
-        assert (width or height) and not (width and height)
-
-        datapoints: List[dict] = []
-
-        simulation: Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
-        for simulation in (
-            self.simulate_shots(
-                shots=shots,
-                control_time=control_time,
-                auto_burst_length=auto_burst_length,
-                recentering=recentering,
-                recentering_response_time=recentering_response_time,
-                recentering_inertia_factor=recentering_inertia_factor,
-                player_state=player_state,
-            )
-            for _ in range(runs)
-        ):
-
-            t: int
-            cursor_coor: Tuple[float, float]
-            pellets_coors: List[Tuple[float, float]]
-            for t, cursor_coor, pellets_coors in simulation:
-
-                cursor_x, cursor_y = cursor_coor
-
-                datapoints.append(
-                    {"Time": t, X: cursor_x, Y: cursor_y, "Type": "cursor"}
-                )
-
-                for pellet_x, pellet_y in pellets_coors:
-                    datapoints.append(
-                        {"Time": t, X: pellet_x, Y: pellet_y, "Type": "pellet"}
-                    )
-
-        min_x: float = min((d[X] for d in datapoints))
-        max_x: float = max((d[X] for d in datapoints))
-        min_y: float = min((d[Y] for d in datapoints))
-        max_y: float = max((d[Y] for d in datapoints))
-
-        if height:
-
-            if max_y != min_y:
-
-                width = int(math.ceil((max_x - min_x) * height / (max_y - min_y)))
-
-            else:
-
-                width = 0
-
-        elif width:
-
-            if max_x != min_x:
-
-                height = int(math.ceil((max_y - min_y) * width / (max_x - min_x)))
-
-            else:
-
-                height = 0
-
-        dataset: altair.Data = altair.Data(values=datapoints)
-
-        chart: altair.Chart = (
-            altair.Chart(dataset)
-            .mark_point()
-            .encode(
-                x=altair.X(
-                    f"{X}:Q",
-                    axis=altair.Axis(title="horizontal angle (degrees)"),
-                    scale=altair.Scale(domain=(min_x, max_x), zero=False),
-                ),
-                y=altair.Y(
-                    f"{Y}:Q",
-                    axis=altair.Axis(title="vertical angle (degrees)"),
-                    scale=altair.Scale(domain=(min_y, max_y), zero=False),
-                ),
-                color=SIMULATION_POINT_TYPE_COLOR,
-                tooltip=["Time:Q", f"{X}:Q", f"{Y}:Q"],
-            )
-            .properties(width=width, height=height)
-            .interactive()
-        )
-
-        legend: altair.Chart = (
-            altair.Chart(dataset)
-            .mark_point()
-            .encode(
-                y=altair.Y("Type:N", axis=altair.Axis(orient="right")),
-                color=SIMULATION_POINT_TYPE_COLOR,
-            )
-            .add_selection(SIMULATION_POINT_TYPE_SELECTION)
-        )
-
-        result: altair.HConcatChart = altair.hconcat(chart, legend)
-
-        return result
 
     def damage_inflicted_by_pellets(
         self,
