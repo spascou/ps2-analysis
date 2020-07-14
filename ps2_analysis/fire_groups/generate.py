@@ -9,18 +9,19 @@ from ps2_census.enums import (
     TargetType,
 )
 
-from ps2_analysis.fire_groups.ammo import Ammo
-from ps2_analysis.fire_groups.cone_of_fire import ConeOfFire
-from ps2_analysis.fire_groups.damage_profile import DamageLocation, DamageProfile
-from ps2_analysis.fire_groups.fire_group import FireGroup
-from ps2_analysis.fire_groups.fire_mode import FireMode
-from ps2_analysis.fire_groups.fire_timing import FireTiming
-from ps2_analysis.fire_groups.heat import Heat
-from ps2_analysis.fire_groups.projectile import Projectile
-from ps2_analysis.fire_groups.recoil import Recoil
 from ps2_analysis.utils import get, optget
 
+from .ammo import Ammo
+from .cone_of_fire import ConeOfFire
+from .damage_profile import DamageLocation, DamageProfile
 from .data_fixers import FIRE_GROUP_DATA_FIXERS
+from .fire_group import FireGroup
+from .fire_mode import FireMode
+from .fire_timing import FireTiming
+from .heat import Heat
+from .lock_on import LockOn
+from .projectile import Projectile
+from .recoil import Recoil
 
 EXCLUDED_ITEM_IDS: FrozenSet[int] = frozenset(
     (6008686, 6004198,)  # Grenade printer  # Mystery weapon
@@ -237,7 +238,9 @@ def parse_fire_group_data(
                 min_horizontal_increase=optget(
                     fm, "recoil_horizontal_min_increase", float, 0.0
                 ),
-                recovery_acceleration=optget(fm, "recoil_recovery_acceleration", float),
+                recovery_acceleration=optget(
+                    fm, "recoil_recovery_acceleration", float, 0.0
+                ),
                 recovery_delay=optget(fm, "recoil_recovery_delay_ms", int, 0),
                 recovery_rate=optget(fm, "recoil_recovery_rate", float, 0.0),
                 first_shot_multiplier=optget(
@@ -249,29 +252,56 @@ def parse_fire_group_data(
 
             projectile: Optional[Projectile] = (
                 Projectile(
+                    turn_rate=optget(pr, "turn_rate", float),
                     speed=optget(fm, "projectile_speed_override", float)
                     or get(pr, "speed", float),
                     max_speed=optget(pr, "speed_max", float),
-                    acceleration=optget(pr, "acceleration", float),
+                    acceleration=optget(pr, "acceleration", float, 0.0),
                     flight_type=ProjectileFlightType(
                         get(pr, "projectile_flight_type_id", int)
                     ),
                     gravity=optget(pr, "gravity", float, 0.0),
                     life_time=get(pr, "lifespan", lambda x: int(1_000 * float(x))),
                     drag=optget(pr, "drag", float, 0.0),
-                    lockon_turn_rate=optget(pr, "turn_rate", float),
-                    lockon_life_time=optget(
+                )
+                if pr is not None
+                else None
+            )
+
+            lock_on: Optional[LockOn] = (
+                LockOn(
+                    turn_rate=get(pr, "turn_rate", float),
+                    acceleration=get(pr, "lockon_acceleration", float),
+                    life_time=get(
                         pr, "lockon_lifespan", lambda x: int(1_000 * float(x))
                     ),
-                    lockon_acceleration=optget(pr, "lockon_acceleration", float),
-                    lockon_lose_angle=optget(pr, "lockon_lose_angle", float),
-                    lockon_seek_in_flight=optget(
-                        pr,
-                        "lockon_seek_in_flight",
-                        lambda x: int(x) == 1 if x else None,
+                    lose_angle=optget(pr, "lockon_lose_angle", float, None),
+                    seek_in_flight=optget(
+                        pr, "lockon_seek_in_flight", lambda x: int(x) == 1, False
+                    ),
+                    acquire_time=optget(fm, "lockon_acquire_ms", int, None),
+                    acquire_close_time=optget(fm, "lockon_acquire_close_ms", int, None),
+                    acquire_far_time=optget(fm, "lockon_acquire_far_ms", int, None),
+                    angle=optget(fm, "lockon_angle", float, None),
+                    range=optget(fm, "lockon_range", float, None),
+                    range_close=optget(fm, "lockon_range_close", float, None),
+                    range_far=optget(fm, "lockon_range_far", float, None),
+                    lose_time=optget(fm, "lockon_lose_ms", int, None),
+                    maintain=optget(
+                        pr, "lockon_maintain", lambda x: int(x) == 1, False
+                    ),
+                    required=optget(
+                        pr, "lockon_required", lambda x: int(x) == 1, False
                     ),
                 )
                 if pr is not None
+                and (
+                    optget(fm, "lockon_angle", float, None)
+                    or optget(pr, "lockon_lose_angle", float, None)
+                    or optget(pr, "lockon_acquire_ms", int, None)
+                    or optget(pr, "lockon_acquire_close_ms", int, None)
+                    or optget(pr, "lockon_acquire_far_ms", int, None)
+                )
                 else None
             )
 
@@ -297,6 +327,7 @@ def parse_fire_group_data(
                 fire_timing=fire_timing,
                 recoil=recoil,
                 projectile=projectile,
+                lock_on=lock_on,
                 player_state_cone_of_fire=player_state_cone_of_fire,
                 player_state_can_ads=player_state_can_ads,
             )

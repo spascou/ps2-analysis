@@ -21,8 +21,8 @@ class Recoil:
     recovery_delay: int
     recovery_rate: float
     first_shot_multiplier: float
+    recovery_acceleration: float = 0.0
     horizontal_tolerance: Optional[float] = None
-    recovery_acceleration: Optional[float] = None
     shots_at_min_magnitude: Optional[int] = None
     max_total_magnitude: Optional[float] = None
 

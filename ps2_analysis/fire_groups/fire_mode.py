@@ -17,6 +17,7 @@ from .cone_of_fire import ConeOfFire
 from .damage_profile import DamageProfile
 from .fire_timing import FireTiming
 from .heat import Heat
+from .lock_on import LockOn
 from .projectile import Projectile
 from .recoil import Recoil
 
@@ -38,6 +39,7 @@ class FireMode:
     )
     player_state_can_ads: Dict[PlayerState, bool] = field(default_factory=dict)
     projectile: Optional[Projectile] = None
+    lock_on: Optional[LockOn] = None
     direct_damage_profile: Optional[DamageProfile] = None
     indirect_damage_profile: Optional[DamageProfile] = None
     sway_can_steady: Optional[bool] = None
