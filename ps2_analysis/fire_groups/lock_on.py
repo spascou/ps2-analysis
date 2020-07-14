@@ -4,12 +4,12 @@ from typing import Optional
 
 @dataclass
 class LockOn:
-    turn_rate: float
-    acceleration: float
     life_time: int
     seek_in_flight: bool
     maintain: bool
     required: bool
+    acceleration: float = 0.0
+    turn_rate: Optional[float] = None
     lose_time: Optional[int] = None
     acquire_time: Optional[int] = None
     acquire_close_time: Optional[int] = None

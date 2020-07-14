@@ -270,8 +270,8 @@ def parse_fire_group_data(
 
             lock_on: Optional[LockOn] = (
                 LockOn(
-                    turn_rate=get(pr, "turn_rate", float),
-                    acceleration=get(pr, "lockon_acceleration", float),
+                    turn_rate=optget(pr, "turn_rate", float),
+                    acceleration=optget(pr, "lockon_acceleration", float, 0.0),
                     life_time=get(
                         pr, "lockon_lifespan", lambda x: int(1_000 * float(x))
                     ),
@@ -288,19 +288,24 @@ def parse_fire_group_data(
                     range_far=optget(fm, "lockon_range_far", float, None),
                     lose_time=optget(fm, "lockon_lose_ms", int, None),
                     maintain=optget(
-                        pr, "lockon_maintain", lambda x: int(x) == 1, False
+                        fm, "lockon_maintain", lambda x: int(x) == 1, False
                     ),
                     required=optget(
-                        pr, "lockon_required", lambda x: int(x) == 1, False
+                        fm, "lockon_required", lambda x: int(x) == 1, False
                     ),
                 )
                 if pr is not None
                 and (
                     optget(fm, "lockon_angle", float, None)
                     or optget(pr, "lockon_lose_angle", float, None)
-                    or optget(pr, "lockon_acquire_ms", int, None)
-                    or optget(pr, "lockon_acquire_close_ms", int, None)
-                    or optget(pr, "lockon_acquire_far_ms", int, None)
+                    or optget(fm, "lockon_acquire_ms", int, None)
+                    or optget(fm, "lockon_acquire_close_ms", int, None)
+                    or optget(fm, "lockon_acquire_far_ms", int, None)
+                    or optget(fm, "lockon_range", float, None)
+                    or optget(fm, "lockon_range_close", float, None)
+                    or optget(fm, "lockon_range_far", float, None)
+                    or optget(fm, "lockon_maintain", lambda x: int(x) == 1, None)
+                    or optget(fm, "lockon_required", lambda x: int(x) == 1, None)
                 )
                 else None
             )
