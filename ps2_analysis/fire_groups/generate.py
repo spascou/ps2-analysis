@@ -257,9 +257,19 @@ def parse_fire_group_data(
                         get(pr, "projectile_flight_type_id", int)
                     ),
                     gravity=optget(pr, "gravity", float, 0.0),
-                    turn_rate=optget(pr, "turn_rate", float),
                     life_time=get(pr, "lifespan", lambda x: int(1_000 * float(x))),
                     drag=optget(pr, "drag", float, 0.0),
+                    lockon_turn_rate=optget(pr, "turn_rate", float),
+                    lockon_life_time=optget(
+                        pr, "lockon_lifespan", lambda x: int(1_000 * float(x))
+                    ),
+                    lockon_acceleration=optget(pr, "lockon_acceleration", float),
+                    lockon_lose_angle=optget(pr, "lockon_lose_angle", float),
+                    lockon_seek_in_flight=optget(
+                        pr,
+                        "lockon_seek_in_flight",
+                        lambda x: int(x) == 1 if x else None,
+                    ),
                 )
                 if pr is not None
                 else None

@@ -14,7 +14,11 @@ class Projectile:
     drag: float
     max_speed: Optional[float] = None
     acceleration: Optional[float] = None
-    turn_rate: Optional[float] = None
+    lockon_turn_rate: Optional[float] = None
+    lockon_life_time: Optional[int] = None
+    lockon_acceleration: Optional[float] = None
+    lockon_lose_angle: Optional[float] = None
+    lockon_seek_in_flight: Optional[bool] = None
 
     @functools.cached_property
     def max_range(self) -> float:
