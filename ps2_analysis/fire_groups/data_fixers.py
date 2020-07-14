@@ -25,6 +25,15 @@ def beamer_vs3_first_fire_group(data: dict):
     psg["cof_min"], psg["cof_max"] = psg["cof_max"], psg["cof_min"]
 
 
+def t7_mini_chaingun_first_fire_group(data: dict):
+    data["fire_group_to_fire_modes"][1]["fire_mode"][
+        "recoil_horizontal_min_increase"
+    ] = "0"
+    data["fire_group_to_fire_modes"][1]["fire_mode"][
+        "recoil_horizontal_max_increase"
+    ] = "0"
+
+
 FIRE_GROUP_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
     7214: serpent_ve92_first_fire_group,
     1022: serpent_ve92_second_fire_group,
@@ -37,4 +46,7 @@ FIRE_GROUP_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
     11: beamer_vs3_first_fire_group,
     766: beamer_vs3_first_fire_group,
     7403: beamer_vs3_first_fire_group,
+    7533: t7_mini_chaingun_first_fire_group,
+    80100: t7_mini_chaingun_first_fire_group,
+    80331: t7_mini_chaingun_first_fire_group,
 }
