@@ -1,4 +1,5 @@
 import functools
+import math
 from dataclasses import dataclass
 from typing import Iterator, Optional, Tuple
 
@@ -35,6 +36,38 @@ class FireTiming:
             return self.refire_time
 
         return self.refire_time
+
+    @functools.cached_property
+    def shots_per_minute(self) -> int:
+
+        shots: int
+        time: int
+
+        # Bursting weapon
+        if self.burst_length and self.burst_length > 1 and self.burst_refire_time:
+
+            shots = self.burst_length
+            time = (shots - 1) * self.burst_refire_time + self.refire_time
+
+        # Semi-automatic or manual action weapon
+        elif not self.is_automatic:
+
+            shots = 1
+            time = self.refire_time + (self.chamber_time or 0) + self.total_delay
+
+        # Automatic weapon
+        else:
+
+            shots = 1
+            time = self.refire_time + (self.chamber_time or 0)
+
+        if time > 0:
+
+            return int(math.floor(60_000 * shots / time))
+
+        else:
+
+            return 0
 
     def generate_shot_timings(
         self,
@@ -83,7 +116,10 @@ class FireTiming:
 
                     first = True
                     burst_fired_shots = 0
-                    time += control_time
+
+                    if fired_shots > 1:
+                        time += control_time
+
                     time += self.refire_time + self.total_delay
 
             # Manually bursting automatic weapon
@@ -99,15 +135,21 @@ class FireTiming:
                     first = True
                     burst_fired_shots = 0
                     time += control_time
-                    time += self.refire_time
+                    time += self.refire_time + self.total_delay
 
+            # Semi-automatic or manual action weapon
+            elif not self.is_automatic:
+
+                first = True
+                time += (
+                    control_time
+                    + self.refire_time
+                    + (self.chamber_time or 0)
+                    + self.total_delay
+                )
+
+            # Automatic weapon
             else:
-
-                # (Semi-)automatic or manual action weapon
-                if not self.is_automatic:
-
-                    first = True
-                    time += control_time
 
                 time += self.refire_time + (self.chamber_time or 0)
 

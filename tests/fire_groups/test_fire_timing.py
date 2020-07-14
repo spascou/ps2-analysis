@@ -49,12 +49,67 @@ def test_spooling_refire_time():
     assert ft.spooling_refire_time(2000) == 90
 
 
+def test_shots_per_minute():
+
+    ft: FireTiming = FireTiming(
+        is_automatic=True, refire_time=80, fire_duration=0, delay=0, charge_up_time=0,
+    )
+
+    assert ft.shots_per_minute == 750
+
+    ft: FireTiming = FireTiming(
+        is_automatic=True,
+        refire_time=80,
+        fire_duration=0,
+        burst_length=3,
+        burst_refire_time=80,
+        delay=0,
+        charge_up_time=0,
+    )
+
+    assert ft.shots_per_minute == 750
+
+    ft: FireTiming = FireTiming(
+        is_automatic=False, refire_time=180, fire_duration=0, delay=0, charge_up_time=0,
+    )
+
+    assert ft.shots_per_minute == 333
+
+    ft: FireTiming = FireTiming(
+        is_automatic=False,
+        refire_time=170,
+        fire_duration=0,
+        delay=0,
+        charge_up_time=0,
+        chamber_time=1500,
+    )
+
+    assert ft.shots_per_minute == 35
+
+    ft: FireTiming = FireTiming(
+        is_automatic=False,
+        refire_time=0,
+        fire_duration=0,
+        delay=0,
+        charge_up_time=0,
+        chamber_time=1000,
+    )
+
+    assert ft.shots_per_minute == 60
+
+
 def test_generate_shot_timings():
     ft: FireTiming = FireTiming(
         is_automatic=True, refire_time=100, fire_duration=0, delay=0, charge_up_time=0,
     )
 
     assert list(ft.generate_shot_timings(shots=3)) == [
+        (0, True),
+        (100, False),
+        (200, False),
+    ]
+
+    assert list(ft.generate_shot_timings(shots=3, control_time=100)) == [
         (0, True),
         (100, False),
         (200, False),
@@ -109,6 +164,22 @@ def test_generate_shot_timings():
         (210, True),
         (260, False),
         (310, False),
+    ]
+
+    ft: FireTiming = FireTiming(
+        is_automatic=False, refire_time=100, fire_duration=0, delay=0, charge_up_time=0,
+    )
+
+    assert list(ft.generate_shot_timings(shots=3)) == [
+        (0, True),
+        (100, True),
+        (200, True),
+    ]
+
+    assert list(ft.generate_shot_timings(shots=3, control_time=100)) == [
+        (0, True),
+        (200, True),
+        (400, True),
     ]
 
 
