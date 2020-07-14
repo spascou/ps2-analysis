@@ -306,6 +306,7 @@ def parse_fire_group_data(
                     or optget(fm, "lockon_range_far", float, None)
                     or optget(fm, "lockon_maintain", lambda x: int(x) == 1, None)
                     or optget(fm, "lockon_required", lambda x: int(x) == 1, None)
+                    or optget(pr, "lockon_seek_in_flight", lambda x: int(x) == 1, None)
                 )
                 else None
             )
