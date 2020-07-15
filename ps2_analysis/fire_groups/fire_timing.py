@@ -47,7 +47,11 @@ class FireTiming:
         if self.burst_length and self.burst_length > 1 and self.burst_refire_time:
 
             shots = self.burst_length
-            time = (shots - 1) * self.burst_refire_time + self.refire_time
+            time = (
+                self.total_delay
+                + (shots - 1) * self.burst_refire_time
+                + self.refire_time
+            )
 
         # Semi-automatic or manual action weapon
         elif not self.is_automatic:
@@ -158,8 +162,14 @@ class FireTiming:
             yield (time, first)
 
     @methodtools.lru_cache()
-    def time_to_fire_shots(self, shots: int, spool_cold_start: bool = True) -> int:
+    def time_to_fire_shots(
+        self, shots: int, control_time: int = 0, spool_cold_start: bool = True
+    ) -> int:
 
         return list(
-            self.generate_shot_timings(shots=shots, spool_cold_start=spool_cold_start)
+            self.generate_shot_timings(
+                shots=shots,
+                control_time=control_time,
+                spool_cold_start=spool_cold_start,
+            )
         )[-1][0]

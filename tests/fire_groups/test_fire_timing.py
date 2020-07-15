@@ -58,7 +58,7 @@ def test_shots_per_minute():
     assert ft.shots_per_minute == 750
 
     ft: FireTiming = FireTiming(
-        is_automatic=True,
+        is_automatic=False,
         refire_time=80,
         fire_duration=0,
         burst_length=3,
@@ -96,6 +96,18 @@ def test_shots_per_minute():
     )
 
     assert ft.shots_per_minute == 60
+
+    ft: FireTiming = FireTiming(
+        is_automatic=False,
+        refire_time=250,
+        fire_duration=0,
+        burst_length=5,
+        burst_refire_time=60,
+        delay=250,
+        charge_up_time=0,
+    )
+
+    assert ft.shots_per_minute == 405
 
 
 def test_generate_shot_timings():
@@ -182,6 +194,34 @@ def test_generate_shot_timings():
         (400, True),
     ]
 
+    ft: FireTiming = FireTiming(
+        is_automatic=False,
+        refire_time=100,
+        fire_duration=0,
+        delay=50,
+        charge_up_time=0,
+        burst_length=3,
+        burst_refire_time=50,
+    )
+
+    assert list(ft.generate_shot_timings(shots=6)) == [
+        (50, True),
+        (100, False),
+        (150, False),
+        (300, True),
+        (350, False),
+        (400, False),
+    ]
+
+    assert list(ft.generate_shot_timings(shots=6, control_time=10)) == [
+        (50, True),
+        (100, False),
+        (150, False),
+        (310, True),
+        (360, False),
+        (410, False),
+    ]
+
 
 def test_time_to_fire_shots():
     ft: FireTiming = FireTiming(
@@ -231,7 +271,7 @@ def test_time_to_fire_shots():
     assert ft.time_to_fire_shots(10) == 2775
 
     ft: FireTiming = FireTiming(
-        is_automatic=True,
+        is_automatic=False,
         refire_time=200,
         fire_duration=0,
         delay=0,
@@ -249,7 +289,7 @@ def test_time_to_fire_shots():
     assert ft.time_to_fire_shots(7) == 800
 
     ft: FireTiming = FireTiming(
-        is_automatic=True,
+        is_automatic=False,
         refire_time=200,
         fire_duration=0,
         delay=50,
@@ -265,3 +305,17 @@ def test_time_to_fire_shots():
     assert ft.time_to_fire_shots(5) == 600
     assert ft.time_to_fire_shots(6) == 700
     assert ft.time_to_fire_shots(7) == 950
+
+    ft: FireTiming = FireTiming(
+        is_automatic=False,
+        refire_time=100,
+        fire_duration=0,
+        delay=50,
+        charge_up_time=0,
+        burst_length=3,
+        burst_refire_time=50,
+    )
+
+    assert ft.time_to_fire_shots(shots=6) == 400
+
+    assert ft.time_to_fire_shots(shots=6, control_time=10) == 410
