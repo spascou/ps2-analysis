@@ -1,10 +1,10 @@
-from typing import Dict
+from typing import Dict, Any
 
 from ps2_census.enums import ResistType
 
 from .enums import DamageLocation, DamageTargetType
 
-DAMAGE_TARGET_TYPE_DATA: Dict[DamageTargetType, dict] = {
+DAMAGE_TARGET_TYPE_DATA: Dict[DamageTargetType, Dict[str, Any]] = {
     DamageTargetType.INFANTRY_BASELINE: {"health": 500, "shields": 500},
     DamageTargetType.INFANTRY_AUXILIARY_SHIELD: {"health": 500, "shields": 550},
     DamageTargetType.INFANTRY_INFILTRATOR: {"health": 400, "shields": 500},

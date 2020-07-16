@@ -10,6 +10,7 @@ from ps2_analysis.utils import (
     locational_linear_falloff,
     optget,
     resolve_damage_resistance,
+    resolve_health_pool,
 )
 
 
@@ -157,4 +158,23 @@ def test_resolve_damage_resistance():
             resist_type=ResistType.SMALL_ARM,
         )
         == 0.0
+    )
+
+
+def test_resolve_health_pool():
+    assert (
+        resolve_health_pool(damage_target_type=DamageTargetType.INFANTRY_BASELINE)
+        == 1000
+    )
+    assert (
+        resolve_health_pool(
+            damage_target_type=DamageTargetType.INFANTRY_AUXILIARY_SHIELD
+        )
+        == 1050
+    )
+    assert (
+        resolve_health_pool(
+            damage_target_type=DamageTargetType.INFANTRY_HEAVY_HEALTH_SHIELD
+        )
+        == 1450
     )

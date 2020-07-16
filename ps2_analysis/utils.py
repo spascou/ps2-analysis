@@ -174,7 +174,9 @@ def resolve_damage_resistance(
     damage_target_type: DamageTargetType,
     damage_location: DamageLocation,
     resist_type: ResistType,
-    damage_target_type_data: Dict[DamageTargetType, dict] = DAMAGE_TARGET_TYPE_DATA,
+    damage_target_type_data: Dict[
+        DamageTargetType, Dict[str, Any]
+    ] = DAMAGE_TARGET_TYPE_DATA,
 ) -> float:
 
     if damage_target_type in damage_target_type_data:
@@ -218,4 +220,22 @@ def resolve_damage_resistance(
 
     else:
 
-        return 0.0
+        raise ValueError(f"{damage_target_type} has no data")
+
+
+def resolve_health_pool(
+    damage_target_type: DamageTargetType,
+    damage_target_type_data: Dict[
+        DamageTargetType, Dict[str, Any]
+    ] = DAMAGE_TARGET_TYPE_DATA,
+) -> int:
+
+    if damage_target_type in damage_target_type_data:
+
+        data: dict = damage_target_type_data[damage_target_type]
+
+        return data.get("health", 0) + data.get("shields", 0)
+
+    else:
+
+        raise ValueError(f"{damage_target_type} has no data")
