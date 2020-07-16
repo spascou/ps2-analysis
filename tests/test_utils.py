@@ -1,3 +1,6 @@
+from ps2_census.enums import ResistType
+
+from ps2_analysis.enums import DamageLocation, DamageTargetType
 from ps2_analysis.utils import (
     apply_damage_resistance,
     damage_to_kill,
@@ -6,6 +9,7 @@ from ps2_analysis.utils import (
     get,
     locational_linear_falloff,
     optget,
+    resolve_damage_resistance,
 )
 
 
@@ -79,3 +83,78 @@ def test_locational_linear_falloff():
     assert locational_linear_falloff(15.0, 10.0, 200.0, 20.0, 100.0) == 150.0
     assert locational_linear_falloff(20.0, 10.0, 200.0, 20.0, 100.0) == 100.0
     assert locational_linear_falloff(30.0, 10.0, 200.0, 20.0, 100.0) == 100.0
+
+
+def test_resolve_damage_resistance():
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_BASELINE,
+            damage_location=DamageLocation.TORSO,
+            resist_type=ResistType.SMALL_ARM,
+        )
+        == 0.0
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_NANOWEAVE,
+            damage_location=DamageLocation.TORSO,
+            resist_type=ResistType.SMALL_ARM,
+        )
+        == 0.2
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_NANOWEAVE,
+            damage_location=DamageLocation.TORSO,
+            resist_type=ResistType.AIR_TO_GROUND_WARHEAD,
+        )
+        == 0.0
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_NANOWEAVE,
+            damage_location=DamageLocation.HEAD,
+            resist_type=ResistType.SMALL_ARM,
+        )
+        == 0.0
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_HEAVY_RESIST_SHIELD,
+            damage_location=DamageLocation.HEAD,
+            resist_type=ResistType.SMALL_ARM,
+        )
+        == 0.35
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_HEAVY_RESIST_SHIELD,
+            damage_location=DamageLocation.LEGS,
+            resist_type=ResistType.EXPLOSIVE,
+        )
+        == 0.35
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_FLAK_ARMOR,
+            damage_location=DamageLocation.TORSO,
+            resist_type=ResistType.EXPLOSIVE,
+        )
+        == 0.5
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_FLAK_ARMOR,
+            damage_location=DamageLocation.TORSO,
+            resist_type=ResistType.DEFAULT_ROCKET_LAUNCHER,
+        )
+        == 0.2
+    )
+    assert (
+        resolve_damage_resistance(
+            damage_target_type=DamageTargetType.INFANTRY_FLAK_ARMOR,
+            damage_location=DamageLocation.TORSO,
+            resist_type=ResistType.SMALL_ARM,
+        )
+        == 0.0
+    )

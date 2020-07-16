@@ -14,6 +14,11 @@ from typing import (
     Union,
 )
 
+from ps2_census.enums import ResistType
+
+from .data import DAMAGE_TARGET_TYPE_DATA
+from .enums import DamageLocation, DamageTargetType
+
 
 def discover(data: Iterable[dict], path: str = "") -> Dict[str, Set[str]]:
 
@@ -163,3 +168,54 @@ def locational_linear_falloff(
     else:
 
         return y_1 * (1 - (x - x_1) / (x_0 - x_1)) + y_0 * ((x - x_1) / (x_0 - x_1))
+
+
+def resolve_damage_resistance(
+    damage_target_type: DamageTargetType,
+    damage_location: DamageLocation,
+    resist_type: ResistType,
+    damage_target_type_data: Dict[DamageTargetType, dict] = DAMAGE_TARGET_TYPE_DATA,
+) -> float:
+
+    if damage_target_type in damage_target_type_data:
+
+        data: dict = damage_target_type_data[damage_target_type]
+
+        if "damage_resistance" in data:
+
+            resistance_data: dict = data["damage_resistance"]
+
+            location_info: Union[str, DamageLocation, set]
+            location_resistance_data: dict
+            for location_info, location_resistance_data in resistance_data.items():
+
+                if (
+                    "any" == location_info
+                    or damage_location == location_info
+                    or damage_location in location_info
+                ):
+
+                    resist_type_info: Union[str, ResistType, set]
+                    resistance: float
+                    for (
+                        resist_type_info,
+                        resistance,
+                    ) in location_resistance_data.items():
+
+                        if (
+                            "any" == resist_type_info
+                            or resist_type == resist_type_info
+                            or resist_type in resist_type_info
+                        ):
+
+                            return resistance
+
+            return 0.0
+
+        else:
+
+            return 0.0
+
+    else:
+
+        return 0.0
