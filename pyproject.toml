@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ps2_analysis"
-version = "0.19.0"
+version = "0.20.0"
 description = "Daybreak Game's Planetside 2 data analysis (UNOFFICIAL)"
 
 license = "MIT"
