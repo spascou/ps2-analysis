@@ -2,6 +2,7 @@ from ps2_census.enums import ResistType
 
 from ps2_analysis.enums import DamageLocation, DamageTargetType
 from ps2_analysis.utils import (
+    all_equal,
     apply_damage_resistance,
     discover,
     float_range,
@@ -168,3 +169,9 @@ def test_resolve_health_pool():
         )
         == 1450
     )
+
+
+def test_all_equal():
+    assert all_equal([1, 2, 3]) is False
+    assert all_equal([1, 1]) is True
+    assert all_equal([]) is True

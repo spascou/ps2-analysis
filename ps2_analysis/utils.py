@@ -226,3 +226,18 @@ def resolve_health_pool(
     else:
 
         raise ValueError(f"{damage_target_type} has no data")
+
+
+def all_equal(elements: Iterable[Any]) -> bool:
+
+    elements_it = iter(elements)
+
+    try:
+
+        first = next(elements_it)
+
+    except StopIteration:
+
+        return True
+
+    return all(first == rest for rest in elements_it)
