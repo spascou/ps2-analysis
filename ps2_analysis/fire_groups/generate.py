@@ -83,9 +83,13 @@ def parse_fire_group_data(
                     get(ps, "can_iron_sight", int) == 1
                 )
 
-            # Direct damage effect
-            damage_direct_effect: Optional[Dict[str, str]] = None
-            if "damage_direct_effect" in fm:
+            # Direct damage
+            direct_damage_profile: Optional[DamageProfile] = None
+
+            if "max_damage" in fm:
+                # Effect
+                damage_direct_effect: Dict[str, str] = {}
+
                 effect = fm["damage_direct_effect"]
 
                 damage_direct_effect = {}
@@ -108,9 +112,42 @@ def parse_fire_group_data(
                         if k in effect:
                             damage_direct_effect[v] = effect[k]
 
-            # Indirect damage effect
-            damage_indirect_effect: Optional[Dict[str, str]] = None
-            if "damage_indirect_effect" in fm:
+                # Profile
+                direct_damage_profile = DamageProfile(
+                    max_damage=get(fm, "max_damage", int),
+                    max_damage_range=optget(fm, "max_damage_range", float, 0.0),
+                    min_damage=optget(
+                        fm, "min_damage", int, get(fm, "max_damage", int)
+                    ),
+                    min_damage_range=optget(fm, "min_damage_range", float, 0.0),
+                    pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
+                    resist_type=damage_direct_effect["resist_type"],
+                    location_multiplier={
+                        DamageLocation.HEAD: 1.0
+                        + optget(fm, "damage_head_multiplier", float, 0.0),
+                        DamageLocation.LEGS: 1.0
+                        + optget(fm, "damage_legs_multiplier", float, 0.0),
+                    },
+                    effect=damage_direct_effect or {},
+                )
+
+                if (
+                    direct_damage_profile.min_damage == 0
+                    and direct_damage_profile.min_damage_range == 0.0
+                ):
+                    direct_damage_profile.min_damage = direct_damage_profile.max_damage
+                    direct_damage_profile.min_damage_range = (
+                        direct_damage_profile.max_damage_range
+                    )
+
+            # Indirect damage
+            indirect_damage_profile: Optional[DamageProfile] = None
+
+            if "max_damage_ind" in fm:
+
+                # Effect
+                damage_indirect_effect: Dict[str, str] = {}
+
                 effect = fm["damage_indirect_effect"]
 
                 damage_indirect_effect = {}
@@ -133,49 +170,16 @@ def parse_fire_group_data(
                         if k in effect:
                             damage_indirect_effect[v] = effect[k]
 
-            direct_damage_profile: Optional[DamageProfile] = (
-                DamageProfile(
-                    max_damage=get(fm, "max_damage", int),
-                    max_damage_range=optget(fm, "max_damage_range", float, 0.0),
-                    min_damage=optget(
-                        fm, "min_damage", int, get(fm, "max_damage", int)
-                    ),
-                    min_damage_range=optget(fm, "min_damage_range", float, 0.0),
-                    pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
-                    location_multiplier={
-                        DamageLocation.HEAD: 1.0
-                        + optget(fm, "damage_head_multiplier", float, 0.0),
-                        DamageLocation.LEGS: 1.0
-                        + optget(fm, "damage_legs_multiplier", float, 0.0),
-                    },
-                    effect=damage_direct_effect or {},
-                )
-                if "max_damage" in fm
-                else None
-            )
-
-            if direct_damage_profile:
-                if (
-                    direct_damage_profile.min_damage == 0
-                    and direct_damage_profile.min_damage_range == 0.0
-                ):
-                    direct_damage_profile.min_damage = direct_damage_profile.max_damage
-                    direct_damage_profile.min_damage_range = (
-                        direct_damage_profile.max_damage_range
-                    )
-
-            indirect_damage_profile: Optional[DamageProfile] = (
-                DamageProfile(
+                # Profile
+                indirect_damage_profile = DamageProfile(
                     max_damage=get(fm, "max_damage_ind", int),
                     max_damage_range=get(fm, "max_damage_ind_radius", float),
                     min_damage=get(fm, "min_damage_ind", int),
                     min_damage_range=get(fm, "min_damage_ind_radius", float),
+                    resist_type=damage_indirect_effect["resist_type"],
                     pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
                     effect=damage_indirect_effect or {},
                 )
-                if "max_damage_ind" in fm
-                else None
-            )
 
             ammo: Optional[Ammo] = (
                 Ammo(

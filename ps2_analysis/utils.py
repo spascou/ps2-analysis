@@ -125,21 +125,6 @@ def float_range(
 
 
 @functools.lru_cache
-def damage_to_kill(
-    health: int = 500, shields: int = 500, damage_resistance: float = 0.0
-) -> int:
-
-    if damage_resistance < 1.0:
-
-        # Damage reduced by resistances is rounded up
-        return math.floor((health + shields) / (1 - damage_resistance))
-
-    else:
-
-        return -1
-
-
-@functools.lru_cache
 def apply_damage_resistance(damage: int, resistance: float = 0.0) -> int:
 
     if resistance < 1.0:
@@ -170,6 +155,7 @@ def locational_linear_falloff(
         return y_1 * (1 - (x - x_1) / (x_0 - x_1)) + y_0 * ((x - x_1) / (x_0 - x_1))
 
 
+@functools.lru_cache
 def resolve_damage_resistance(
     damage_target_type: DamageTargetType,
     damage_location: DamageLocation,
@@ -223,6 +209,7 @@ def resolve_damage_resistance(
         raise ValueError(f"{damage_target_type} has no data")
 
 
+@functools.lru_cache
 def resolve_health_pool(
     damage_target_type: DamageTargetType,
     damage_target_type_data: Dict[

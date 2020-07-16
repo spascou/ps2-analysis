@@ -8,9 +8,9 @@ from typing import Dict, Iterator, List, Literal, Optional, Tuple
 import methodtools
 from ps2_census.enums import FireModeType, PlayerState
 
-from ps2_analysis.enums import DamageLocation
+from ps2_analysis.enums import DamageLocation, DamageTargetType
 from ps2_analysis.geometry_utils import planetman_hit_location
-from ps2_analysis.utils import damage_to_kill, float_range
+from ps2_analysis.utils import float_range, resolve_health_pool
 
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
@@ -90,7 +90,10 @@ class FireMode:
 
     @methodtools.lru_cache()
     def damage_per_pellet(
-        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+        self,
+        distance: float,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
         direct_damage: int = 0
@@ -98,7 +101,9 @@ class FireMode:
         if self.direct_damage_profile:
 
             direct_damage = self.direct_damage_profile.damage_per_pellet(
-                distance=distance, location=location
+                distance=distance,
+                damage_target_type=damage_target_type,
+                damage_location=damage_location,
             )
 
         indirect_damage: int = 0
@@ -106,7 +111,9 @@ class FireMode:
         if self.indirect_damage_profile:
 
             indirect_damage = self.indirect_damage_profile.damage_per_pellet(
-                distance=0, location=location
+                distance=0,
+                damage_target_type=damage_target_type,
+                damage_location=damage_location,
             )
 
         return direct_damage + indirect_damage
@@ -115,9 +122,8 @@ class FireMode:
     def damage_per_shot(
         self,
         distance: float,
-        location: DamageLocation = DamageLocation.TORSO,
-        direct_damage_resistance: float = 0.0,
-        indirect_damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
         direct_damage: int = 0
@@ -126,8 +132,8 @@ class FireMode:
 
             direct_damage = self.direct_damage_profile.damage_per_shot(
                 distance=distance,
-                location=location,
-                damage_resistance=direct_damage_resistance,
+                damage_target_type=damage_target_type,
+                damage_location=damage_location,
             )
 
         indirect_damage: int = 0
@@ -136,8 +142,8 @@ class FireMode:
 
             indirect_damage = self.indirect_damage_profile.damage_per_shot(
                 distance=0,
-                location=location,
-                damage_resistance=indirect_damage_resistance,
+                damage_target_type=damage_target_type,
+                damage_location=damage_location,
             )
 
         return direct_damage + indirect_damage
@@ -146,35 +152,30 @@ class FireMode:
     def shots_to_kill(
         self,
         distance: float,
-        location: DamageLocation = DamageLocation.TORSO,
-        health: int = 500,
-        shields: int = 500,
-        direct_damage_resistance: float = 0.0,
-        indirect_damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
         dps: int = self.damage_per_shot(
             distance=distance,
-            location=location,
-            direct_damage_resistance=direct_damage_resistance,
-            indirect_damage_resistance=indirect_damage_resistance,
+            damage_target_type=damage_target_type,
+            damage_location=damage_location,
         )
 
-        if dps != 0:
+        if dps > 0:
 
-            return int(math.ceil(damage_to_kill(health=health, shields=shields,) / dps))
+            return int(
+                math.ceil(
+                    resolve_health_pool(damage_target_type=damage_target_type) / dps
+                )
+            )
 
-        else:
-
-            return -1
+        return -1
 
     def shots_to_kill_ranges(
         self,
-        location: DamageLocation = DamageLocation.TORSO,
-        health: int = 500,
-        shields: int = 500,
-        direct_damage_resistance: float = 0.0,
-        indirect_damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
         step: float = 0.1,
         precision_decimals: int = 2,
     ) -> Iterator[Tuple[float, int]]:
@@ -194,11 +195,8 @@ class FireMode:
 
                     stk: int = self.shots_to_kill(
                         distance=r,
-                        location=location,
-                        health=health,
-                        shields=shields,
-                        direct_damage_resistance=direct_damage_resistance,
-                        indirect_damage_resistance=indirect_damage_resistance,
+                        damage_target_type=damage_target_type,
+                        damage_location=damage_location,
                     )
 
                     if previous_stk is None or stk != previous_stk:
@@ -219,11 +217,8 @@ class FireMode:
                     0.0,
                     self.shots_to_kill(
                         distance=self.direct_damage_profile.max_damage_range,
-                        location=location,
-                        health=health,
-                        shields=shields,
-                        direct_damage_resistance=direct_damage_resistance,
-                        indirect_damage_resistance=indirect_damage_resistance,
+                        damage_target_type=damage_target_type,
+                        damage_location=damage_location,
                     ),
                 )
 
@@ -233,11 +228,8 @@ class FireMode:
                 0.0,
                 self.shots_to_kill(
                     distance=0.0,
-                    location=location,
-                    health=health,
-                    shields=shields,
-                    direct_damage_resistance=direct_damage_resistance,
-                    indirect_damage_resistance=indirect_damage_resistance,
+                    damage_target_type=damage_target_type,
+                    damage_location=damage_location,
                 ),
             )
 
@@ -625,6 +617,7 @@ class FireMode:
         self,
         distance: float,
         pellets: List[Tuple[float, float]],
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
         aim_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
@@ -643,7 +636,11 @@ class FireMode:
             )
 
             damage += (
-                self.damage_per_pellet(distance=distance, location=hit_location)
+                self.damage_per_pellet(
+                    distance=distance,
+                    damage_target_type=damage_target_type,
+                    damage_location=hit_location,
+                )
                 if hit_location
                 else 0
             )
@@ -656,9 +653,7 @@ class FireMode:
         runs: int = 1,
         max_time: int = 20_000,
         control_time: int = 0,
-        health: int = 500,
-        shields: int = 500,
-        damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
         auto_burst_length: Optional[int] = None,
         aim_location: DamageLocation = DamageLocation.TORSO,
         player_state: PlayerState = PlayerState.STANDING,
@@ -673,9 +668,7 @@ class FireMode:
 
         ttks: List[int] = []
 
-        dtk: int = damage_to_kill(
-            health=health, shields=shields, damage_resistance=damage_resistance
-        )
+        dtk: int = resolve_health_pool(damage_target_type=damage_target_type)
 
         if dtk == -1:
 
@@ -706,7 +699,10 @@ class FireMode:
                     break
 
                 total_damage += self.damage_inflicted_by_pellets(
-                    distance=distance, pellets=pellets_coors, aim_location=aim_location
+                    distance=distance,
+                    pellets=pellets_coors,
+                    damage_target_type=damage_target_type,
+                    aim_location=aim_location,
                 )
 
                 if total_damage >= dtk:

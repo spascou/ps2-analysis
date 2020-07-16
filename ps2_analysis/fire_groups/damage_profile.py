@@ -4,13 +4,15 @@ from dataclasses import dataclass, field
 from typing import Dict, Iterator, Optional, Tuple
 
 import methodtools
+from ps2_census.enums import ResistType
 
-from ps2_analysis.enums import DamageLocation
+from ps2_analysis.enums import DamageLocation, DamageTargetType
 from ps2_analysis.utils import (
     apply_damage_resistance,
-    damage_to_kill,
     float_range,
     locational_linear_falloff,
+    resolve_damage_resistance,
+    resolve_health_pool,
 )
 
 
@@ -21,6 +23,7 @@ class DamageProfile:
     min_damage: int
     min_damage_range: float
     pellets_count: int
+    resist_type: ResistType
     location_multiplier: Dict[DamageLocation, float] = field(default_factory=dict)
     effect: Dict[str, str] = field(default_factory=dict)
 
@@ -38,8 +41,8 @@ class DamageProfile:
     def damage_per_pellet(
         self,
         distance: float,
-        location: DamageLocation = DamageLocation.TORSO,
-        damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
         # Damage degradation due to range is rounded down
@@ -55,51 +58,58 @@ class DamageProfile:
             )
         )
 
+        damage_resistance: float = resolve_damage_resistance(
+            damage_target_type=damage_target_type,
+            damage_location=damage_location,
+            resist_type=self.resist_type,
+        )
+
         if damage_resistance < 1.0:
 
             return apply_damage_resistance(
-                damage=math.ceil(damage * self.location_multiplier.get(location, 1.0)),
+                damage=math.ceil(
+                    damage * self.location_multiplier.get(damage_location, 1.0)
+                ),
                 resistance=damage_resistance,
             )
 
         else:
 
-            return -1
+            return 0
 
     @methodtools.lru_cache()
     def damage_per_shot(
         self,
         distance: float,
-        location: DamageLocation = DamageLocation.TORSO,
-        damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
         return self.pellets_count * self.damage_per_pellet(
-            distance=distance, location=location, damage_resistance=damage_resistance
+            distance=distance,
+            damage_target_type=damage_target_type,
+            damage_location=damage_location,
         )
 
     @methodtools.lru_cache()
     def shots_to_kill(
         self,
         distance: float,
-        location: DamageLocation = DamageLocation.TORSO,
-        health: int = 500,
-        shields: int = 500,
-        damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
     ) -> int:
 
-        dps: int = self.damage_per_shot(distance=distance, location=location)
+        dps: int = self.damage_per_shot(
+            distance=distance,
+            damage_target_type=damage_target_type,
+            damage_location=damage_location,
+        )
 
-        if dps != 0:
+        if dps > 0:
 
             return int(
                 math.ceil(
-                    damage_to_kill(
-                        health=health,
-                        shields=shields,
-                        damage_resistance=damage_resistance,
-                    )
-                    / dps
+                    resolve_health_pool(damage_target_type=damage_target_type) / dps
                 )
             )
 
@@ -107,10 +117,8 @@ class DamageProfile:
 
     def shots_to_kill_ranges(
         self,
-        location: DamageLocation = DamageLocation.TORSO,
-        health: int = 500,
-        shields: int = 500,
-        damage_resistance: float = 0.0,
+        damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
+        damage_location: DamageLocation = DamageLocation.TORSO,
         step: float = 0.1,
         precision_decimals: int = 2,
     ) -> Iterator[Tuple[float, int]]:
@@ -125,10 +133,8 @@ class DamageProfile:
 
                 stk: int = self.shots_to_kill(
                     distance=r,
-                    location=location,
-                    health=health,
-                    shields=shields,
-                    damage_resistance=damage_resistance,
+                    damage_target_type=damage_target_type,
+                    damage_location=damage_location,
                 )
 
                 if previous_stk is None or stk != previous_stk:
@@ -149,9 +155,7 @@ class DamageProfile:
                 0.0,
                 self.shots_to_kill(
                     distance=self.max_damage_range,
-                    location=location,
-                    health=health,
-                    shields=shields,
-                    damage_resistance=damage_resistance,
+                    damage_target_type=damage_target_type,
+                    damage_location=damage_location,
                 ),
             )

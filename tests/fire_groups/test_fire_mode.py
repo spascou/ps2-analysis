@@ -1,5 +1,6 @@
-from ps2_census.enums import FireModeType, PlayerState
+from ps2_census.enums import FireModeType, PlayerState, ResistType
 
+from ps2_analysis.enums import DamageTargetType
 from ps2_analysis.fire_groups.ammo import Ammo
 from ps2_analysis.fire_groups.cone_of_fire import ConeOfFire
 from ps2_analysis.fire_groups.damage_profile import DamageProfile
@@ -50,9 +51,14 @@ def test_damage_per_pellet():
         min_damage=10,
         min_damage_range=20,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert fm.damage_per_pellet(0) == 90
+    assert (
+        fm.damage_per_pellet(0, damage_target_type=DamageTargetType.INFANTRY_NANOWEAVE)
+        == 72
+    )
     assert fm.damage_per_pellet(10) == 90
     assert fm.damage_per_pellet(15) == 50
     assert fm.damage_per_pellet(20) == 10
@@ -77,6 +83,7 @@ def test_damage_per_pellet():
         min_damage=10,
         min_damage_range=20,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     fm.indirect_damage_profile = DamageProfile(
@@ -85,6 +92,7 @@ def test_damage_per_pellet():
         min_damage=0,
         min_damage_range=3,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert fm.damage_per_pellet(0) == 100
@@ -136,9 +144,14 @@ def test_damage_per_shot():
         min_damage=500,
         min_damage_range=200,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert fm.damage_per_shot(0) == 1500
+    assert (
+        fm.damage_per_shot(0, damage_target_type=DamageTargetType.INFANTRY_NANOWEAVE)
+        == 1200
+    )
     assert fm.damage_per_shot(100) == 1500
     assert fm.damage_per_shot(150) == 1000
     assert fm.damage_per_shot(200) == 500
@@ -163,6 +176,7 @@ def test_damage_per_shot():
         min_damage=500,
         min_damage_range=200,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     fm.indirect_damage_profile = DamageProfile(
@@ -171,6 +185,7 @@ def test_damage_per_shot():
         min_damage=0,
         min_damage_range=2,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert fm.damage_per_shot(0) == 1550
@@ -222,6 +237,7 @@ def test_shots_to_kill():
         min_damage=500,
         min_damage_range=400,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert fm.shots_to_kill(0) == 1
@@ -249,6 +265,7 @@ def test_shots_to_kill():
         min_damage=500,
         min_damage_range=400,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     fm.indirect_damage_profile = DamageProfile(
@@ -257,6 +274,7 @@ def test_shots_to_kill():
         min_damage=0,
         min_damage_range=3,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert fm.shots_to_kill(0) == 1
@@ -308,6 +326,7 @@ def test_shots_to_kill_ranges():
         min_damage=500,
         min_damage_range=200,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert list(fm.shots_to_kill_ranges()) == [(0.0, 1), (150.0, 2)]
@@ -331,6 +350,7 @@ def test_shots_to_kill_ranges():
         min_damage=500,
         min_damage_range=200,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     fm.indirect_damage_profile = DamageProfile(
@@ -339,6 +359,7 @@ def test_shots_to_kill_ranges():
         min_damage=0,
         min_damage_range=3,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     assert list(fm.shots_to_kill_ranges()) == [(0.0, 1), (160.0, 2)]
@@ -459,6 +480,7 @@ def test_simulate_shots():
         min_damage=500,
         min_damage_range=200,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     cof: ConeOfFire = ConeOfFire(
@@ -535,6 +557,7 @@ def test_real_time_to_kill():
         min_damage=0,
         min_damage_range=20,
         pellets_count=1,
+        resist_type=ResistType.SMALL_ARM,
     )
 
     cof: ConeOfFire = ConeOfFire(
