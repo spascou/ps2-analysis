@@ -113,7 +113,11 @@ class FireMode:
 
     @methodtools.lru_cache()
     def damage_per_shot(
-        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+        self,
+        distance: float,
+        location: DamageLocation = DamageLocation.TORSO,
+        direct_damage_resistance: float = 0.0,
+        indirect_damage_resistance: float = 0.0,
     ) -> int:
 
         direct_damage: int = 0
@@ -121,7 +125,9 @@ class FireMode:
         if self.direct_damage_profile:
 
             direct_damage = self.direct_damage_profile.damage_per_shot(
-                distance=distance, location=location
+                distance=distance,
+                location=location,
+                damage_resistance=direct_damage_resistance,
             )
 
         indirect_damage: int = 0
@@ -129,7 +135,9 @@ class FireMode:
         if self.indirect_damage_profile:
 
             indirect_damage = self.indirect_damage_profile.damage_per_shot(
-                distance=0, location=location
+                distance=0,
+                location=location,
+                damage_resistance=indirect_damage_resistance,
             )
 
         return direct_damage + indirect_damage
@@ -141,23 +149,20 @@ class FireMode:
         location: DamageLocation = DamageLocation.TORSO,
         health: int = 500,
         shields: int = 500,
-        damage_resistance: float = 0.0,
+        direct_damage_resistance: float = 0.0,
+        indirect_damage_resistance: float = 0.0,
     ) -> int:
 
-        dps: int = self.damage_per_shot(distance=distance, location=location)
+        dps: int = self.damage_per_shot(
+            distance=distance,
+            location=location,
+            direct_damage_resistance=direct_damage_resistance,
+            indirect_damage_resistance=indirect_damage_resistance,
+        )
 
         if dps != 0:
 
-            return int(
-                math.ceil(
-                    damage_to_kill(
-                        health=health,
-                        shields=shields,
-                        damage_resistance=damage_resistance,
-                    )
-                    / dps
-                )
-            )
+            return int(math.ceil(damage_to_kill(health=health, shields=shields,) / dps))
 
         else:
 
@@ -168,7 +173,8 @@ class FireMode:
         location: DamageLocation = DamageLocation.TORSO,
         health: int = 500,
         shields: int = 500,
-        damage_resistance: float = 0.0,
+        direct_damage_resistance: float = 0.0,
+        indirect_damage_resistance: float = 0.0,
         step: float = 0.1,
         precision_decimals: int = 2,
     ) -> Iterator[Tuple[float, int]]:
@@ -191,7 +197,8 @@ class FireMode:
                         location=location,
                         health=health,
                         shields=shields,
-                        damage_resistance=damage_resistance,
+                        direct_damage_resistance=direct_damage_resistance,
+                        indirect_damage_resistance=indirect_damage_resistance,
                     )
 
                     if previous_stk is None or stk != previous_stk:
@@ -215,7 +222,8 @@ class FireMode:
                         location=location,
                         health=health,
                         shields=shields,
-                        damage_resistance=damage_resistance,
+                        direct_damage_resistance=direct_damage_resistance,
+                        indirect_damage_resistance=indirect_damage_resistance,
                     ),
                 )
 
@@ -228,7 +236,8 @@ class FireMode:
                     location=location,
                     health=health,
                     shields=shields,
-                    damage_resistance=damage_resistance,
+                    direct_damage_resistance=direct_damage_resistance,
+                    indirect_damage_resistance=indirect_damage_resistance,
                 ),
             )
 

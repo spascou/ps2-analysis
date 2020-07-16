@@ -126,11 +126,25 @@ def damage_to_kill(
 
     if damage_resistance < 1.0:
 
-        return math.ceil((health + shields) / (math.ceil(1 - damage_resistance)))
+        # Damage reduced by resistances is rounded up
+        return math.floor((health + shields) / (1 - damage_resistance))
 
     else:
 
         return -1
+
+
+@functools.lru_cache
+def apply_damage_resistance(damage: int, resistance: float = 0.0) -> int:
+
+    if resistance < 1.0:
+
+        # Damage reduced by resistances is rounded up
+        return int(math.ceil(damage * (1 - resistance)))
+
+    else:
+
+        return 0
 
 
 @functools.lru_cache

@@ -1,4 +1,6 @@
 from ps2_analysis.utils import (
+    apply_damage_resistance,
+    damage_to_kill,
     discover,
     float_range,
     get,
@@ -50,6 +52,25 @@ def test_float_range():
         1.3,
         1.4,
     ]
+
+
+def test_damage_to_kill():
+    assert damage_to_kill(health=500, shields=500, damage_resistance=0.0) == 1000
+    assert damage_to_kill(health=500, shields=500, damage_resistance=1.0) == -1
+    assert damage_to_kill(health=500, shields=500, damage_resistance=1.5) == -1
+    assert damage_to_kill(health=500, shields=500, damage_resistance=0.5) == 2000
+    assert damage_to_kill(health=500, shields=500, damage_resistance=0.3) == 1428
+    assert damage_to_kill(health=500, shields=500, damage_resistance=-0.3) == 769
+
+
+def test_apply_damage_resistance():
+    assert apply_damage_resistance(damage=100, resistance=0.0) == 100
+    assert apply_damage_resistance(damage=100, resistance=1.0) == 0
+    assert apply_damage_resistance(damage=100, resistance=1.5) == 0
+    assert apply_damage_resistance(damage=100, resistance=1.5) == 0
+    assert apply_damage_resistance(damage=100, resistance=0.3) == 70
+    assert apply_damage_resistance(damage=101, resistance=0.3) == 71
+    assert apply_damage_resistance(damage=100, resistance=-0.3) == 130
 
 
 def test_locational_linear_falloff():

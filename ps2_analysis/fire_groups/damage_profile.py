@@ -6,7 +6,12 @@ from typing import Dict, Iterator, Optional, Tuple
 import methodtools
 
 from ps2_analysis.enums import DamageLocation
-from ps2_analysis.utils import damage_to_kill, float_range, locational_linear_falloff
+from ps2_analysis.utils import (
+    apply_damage_resistance,
+    damage_to_kill,
+    float_range,
+    locational_linear_falloff,
+)
 
 
 @dataclass
@@ -31,26 +36,46 @@ class DamageProfile:
 
     @methodtools.lru_cache()
     def damage_per_pellet(
-        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+        self,
+        distance: float,
+        location: DamageLocation = DamageLocation.TORSO,
+        damage_resistance: float = 0.0,
     ) -> int:
 
-        damage: float = locational_linear_falloff(
-            x=distance,
-            x_0=self.max_damage_range,
-            y_0=self.max_damage,
-            x_1=self.min_damage_range,
-            y_1=self.min_damage,
+        # Damage degradation due to range is rounded down
+        damage: int = int(
+            math.floor(
+                locational_linear_falloff(
+                    x=distance,
+                    x_0=self.max_damage_range,
+                    y_0=self.max_damage,
+                    x_1=self.min_damage_range,
+                    y_1=self.min_damage,
+                )
+            )
         )
 
-        return int(math.floor(damage * self.location_multiplier.get(location, 1.0)))
+        if damage_resistance < 1.0:
+
+            return apply_damage_resistance(
+                damage=math.ceil(damage * self.location_multiplier.get(location, 1.0)),
+                resistance=damage_resistance,
+            )
+
+        else:
+
+            return -1
 
     @methodtools.lru_cache()
     def damage_per_shot(
-        self, distance: float, location: DamageLocation = DamageLocation.TORSO
+        self,
+        distance: float,
+        location: DamageLocation = DamageLocation.TORSO,
+        damage_resistance: float = 0.0,
     ) -> int:
 
         return self.pellets_count * self.damage_per_pellet(
-            distance=distance, location=location
+            distance=distance, location=location, damage_resistance=damage_resistance
         )
 
     @methodtools.lru_cache()
