@@ -1,6 +1,7 @@
 import json
 from typing import Dict, FrozenSet, List, Optional, Set
 
+from ps2_analysis.utils import get, optget
 from ps2_census.enums import (
     FireModeType,
     PlayerState,
@@ -8,8 +9,6 @@ from ps2_census.enums import (
     ResistType,
     TargetType,
 )
-
-from ps2_analysis.utils import get, optget
 
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
@@ -74,7 +73,7 @@ def parse_fire_group_data(
                     recovery_rate=optget(ps, "cof_recovery_rate", float, 0.0),
                     recovery_delay=optget(ps, "cof_recovery_delay_ms", int, 0),
                     multiplier=get(fm, "cof_scalar", float),
-                    moving_multiplier=get(fm, "cof_scalar", float),
+                    moving_multiplier=get(fm, "cof_scalar_moving", float),
                     pellet_spread=optget(fm, "cof_pellet_spread", float, 0.0),
                     grow_rate=optget(ps, "cof_grow_rate", float),
                 )
@@ -275,22 +274,12 @@ def parse_fire_group_data(
             lock_on: Optional[LockOn] = (
                 LockOn(
                     turn_rate=optget(pr, "turn_rate", float),
-                    acceleration=optget(pr, "lockon_acceleration", float, 0.0),
                     life_time=get(
                         pr, "lockon_lifespan", lambda x: int(1_000 * float(x))
                     ),
-                    lose_angle=optget(pr, "lockon_lose_angle", float, None),
                     seek_in_flight=optget(
                         pr, "lockon_seek_in_flight", lambda x: int(x) == 1, False
                     ),
-                    acquire_time=optget(fm, "lockon_acquire_ms", int, None),
-                    acquire_close_time=optget(fm, "lockon_acquire_close_ms", int, None),
-                    acquire_far_time=optget(fm, "lockon_acquire_far_ms", int, None),
-                    angle=optget(fm, "lockon_angle", float, None),
-                    range=optget(fm, "lockon_range", float, None),
-                    range_close=optget(fm, "lockon_range_close", float, None),
-                    range_far=optget(fm, "lockon_range_far", float, None),
-                    lose_time=optget(fm, "lockon_lose_ms", int, None),
                     maintain=optget(
                         fm, "lockon_maintain", lambda x: int(x) == 1, False
                     ),
