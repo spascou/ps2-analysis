@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from ps2_census.enums import Faction, ItemCategory, PlayerState
 
@@ -37,15 +37,15 @@ class Weapon:
     attachments: List[Attachment] = field(default_factory=list)
 
     @property
-    def attachment_fire_groups(self) -> Dict[Attachment, List[FireGroup]]:
+    def attachment_fire_groups(self) -> List[Tuple[Attachment, List[FireGroup]]]:
 
         if self.attachments:
 
-            return {a: a.fire_groups for a in self.attachments if a.fire_groups}
+            return [(a, a.fire_groups) for a in self.attachments if a.fire_groups]
 
         else:
 
-            return {}
+            return []
 
     @property
     def fire_timing(self) -> Optional[FireTiming]:
