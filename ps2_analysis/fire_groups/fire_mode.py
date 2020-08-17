@@ -296,13 +296,22 @@ class FireMode:
         recentering: bool = False,
         recentering_response_time: int = 1_000,
         recentering_inertia_factor: float = 0.7,
-    ) -> Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]:
+    ) -> Iterator[
+        Tuple[
+            int,  # time
+            Tuple[float, float],  # cursor position
+            List[Tuple[float, float]],  # pellets positions
+            float,  # current CoF
+            Tuple[float, float],  # current min and max vertical recoil
+            Tuple[float, float],  # current min and max horizontal recoil
+        ],
+    ]:
 
         srandom = random.SystemRandom()
 
         if shots == 0:
 
-            yield (0, (0, 0), [])
+            yield (0, (0, 0), [], 0, (0, 0), (0, 0))
 
             return
 
@@ -435,10 +444,26 @@ class FireMode:
             ############################################################################
 
             # Result as a tuple of time, cursor position tuple and pellets positions tuples
-            curr_result: Tuple[int, Tuple[float, float], List[Tuple[float, float]]] = (
+            curr_result: Tuple[
+                int,
+                Tuple[float, float],
+                List[Tuple[float, float]],
+                float,
+                Tuple[float, float],
+                Tuple[float, float],
+            ] = (
                 t,  # time
                 (curr_x, curr_y),  # cursor
                 [],  # pellets
+                curr_cof_angle,  # current cof angle
+                (
+                    curr_min_vertical_recoil,
+                    curr_max_vertical_recoil,
+                ),  # current vertical recoil
+                (
+                    curr_min_horizontal_recoil,
+                    curr_max_horizontal_recoil,
+                ),  # current horizontal recoil
             )
 
             # CoF simulation
@@ -674,7 +699,16 @@ class FireMode:
 
             return -1
 
-        simulation: Iterator[Tuple[int, Tuple[float, float], List[Tuple[float, float]]]]
+        simulation: Iterator[
+            Tuple[
+                int,
+                Tuple[float, float],
+                List[Tuple[float, float]],
+                float,
+                Tuple[float, float],
+                Tuple[float, float],
+            ]
+        ]
         for simulation in (
             self.simulate_shots(
                 shots=-1,
@@ -692,7 +726,7 @@ class FireMode:
 
             t: int
             pellets_coors: List[Tuple[float, float]]
-            for t, _, pellets_coors in simulation:
+            for t, _, pellets_coors, _, _, _ in simulation:
 
                 if t > max_time:
 
