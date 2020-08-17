@@ -293,9 +293,7 @@ class FireMode:
         control_time: int = 0,
         auto_burst_length: Optional[int] = None,
         player_state: PlayerState = PlayerState.STANDING,
-        recentering: bool = False,
-        recentering_response_time: int = 1_000,
-        recentering_inertia_factor: float = 0.7,
+        recoil_compensation: bool = False,
     ) -> Iterator[
         Tuple[
             int,  # time
@@ -334,9 +332,6 @@ class FireMode:
 
         # Loop
         previous_t: int = 0
-
-        # Recentering
-        recentering_vectors: List[Tuple[int, Tuple[float, float]]] = []
 
         t: int
         b: bool
@@ -404,41 +399,23 @@ class FireMode:
                         time=delta - recoil_recovery_delay,
                     )
 
-            # Recentering
+            # Recoil compensation
             ############################################################################
-            if recentering is True:
+            if recoil_compensation is True:
 
-                # Cursor not centered; applying recentering
-                if (curr_x, curr_y) != (0.0, 0.0):
+                if curr_y != 0.0:
 
-                    # Compute average recentering inertia vector
-                    recentering_inertia_vectors: List[Tuple[float, float]] = [
-                        k[1]
-                        for k in filter(
-                            lambda v: v[0] >= t - recentering_response_time,
-                            recentering_vectors,
-                        )
-                    ]
+                    recenter_a: float
 
-                    recentering_average_inertia_x, recentering_average_inertia_y = [
-                        sum(z) / len(z) for z in zip(*recentering_inertia_vectors)
-                    ] or [0.0, 0.0]
+                    if self.recoil.min_angle == self.recoil.max_angle:
+                        recenter_a = self.recoil.min_angle
+                    else:
+                        recenter_a = (self.recoil.min_angle + self.recoil.max_angle) / 2
 
-                    # Compute recentering vector as half sum of current cursor position
-                    # and average recentering inertia vector
-                    recentering_x: float = (
-                        (recentering_inertia_factor * recentering_average_inertia_x)
-                        - ((1 - recentering_inertia_factor) * curr_x)
-                    )
-                    recentering_y: float = (
-                        (recentering_inertia_factor * recentering_average_inertia_y)
-                        - ((1 - recentering_inertia_factor) * curr_y)
-                    )
+                    if recenter_a != 0.0:
+                        curr_x -= curr_y / (math.tan(math.radians(90 - recenter_a)))
 
-                    recentering_vectors.append((t, (recentering_x, recentering_y)))
-
-                    curr_x += recentering_x
-                    curr_y += recentering_y
+                    curr_y = 0.0
 
             # Current result
             ############################################################################
@@ -682,9 +659,7 @@ class FireMode:
         auto_burst_length: Optional[int] = None,
         aim_location: DamageLocation = DamageLocation.TORSO,
         player_state: PlayerState = PlayerState.STANDING,
-        recentering: bool = False,
-        recentering_response_time: int = 1_000,
-        recentering_inertia_factor: float = 0.7,
+        recoil_compensation: bool = False,
     ) -> int:
 
         if not self.direct_damage_profile and not self.indirect_damage_profile:
@@ -714,9 +689,7 @@ class FireMode:
                 shots=-1,
                 control_time=control_time,
                 auto_burst_length=auto_burst_length,
-                recentering=recentering,
-                recentering_response_time=recentering_response_time,
-                recentering_inertia_factor=recentering_inertia_factor,
+                recoil_compensation=recoil_compensation,
                 player_state=player_state,
             )
             for _ in range(runs)

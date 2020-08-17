@@ -449,7 +449,7 @@ def test_simulate_shots():
     )
 
     rc: Recoil = Recoil(
-        max_angle=0.0,
+        max_angle=5.0,
         min_angle=10.0,
         max_vertical=1.0,
         min_vertical=3.0,
@@ -510,9 +510,23 @@ def test_simulate_shots():
         player_state_cone_of_fire={PlayerState.STANDING: cof},
     )
 
-    assert (
-        len(list(fm.simulate_shots(shots=10, player_state=PlayerState.STANDING))) == 10
-    )
+    assert [
+        s[1][1] for s in fm.simulate_shots(shots=10, player_state=PlayerState.STANDING,)
+    ] != [0.0] * 10
+
+    assert [
+        s[1][0]
+        for s in fm.simulate_shots(
+            shots=10, player_state=PlayerState.STANDING, recoil_compensation=True,
+        )
+    ] != [0.0] * 10
+
+    assert [
+        s[1][1]
+        for s in fm.simulate_shots(
+            shots=10, player_state=PlayerState.STANDING, recoil_compensation=True,
+        )
+    ] == [0.0] * 10
 
 
 def test_real_time_to_kill():
