@@ -294,6 +294,7 @@ class FireMode:
         auto_burst_length: Optional[int] = None,
         player_state: PlayerState = PlayerState.STANDING,
         recoil_compensation: bool = False,
+        recoil_compensation_accuracy: float = 0.0,
     ) -> Iterator[
         Tuple[
             int,  # time
@@ -415,7 +416,18 @@ class FireMode:
                     if recenter_a != 0.0:
                         curr_x -= curr_y / (math.tan(math.radians(90 - recenter_a)))
 
+                        if recoil_compensation_accuracy > 0.0:
+                            curr_x += srandom.uniform(
+                                -recoil_compensation_accuracy,
+                                recoil_compensation_accuracy,
+                            )
+
                     curr_y = 0.0
+
+                    if recoil_compensation_accuracy > 0.0:
+                        curr_y += srandom.uniform(
+                            -recoil_compensation_accuracy, recoil_compensation_accuracy
+                        )
 
             # Current result
             ############################################################################
@@ -660,6 +672,7 @@ class FireMode:
         aim_location: DamageLocation = DamageLocation.TORSO,
         player_state: PlayerState = PlayerState.STANDING,
         recoil_compensation: bool = False,
+        recoil_compensation_accuracy: float = 0.0,
     ) -> int:
 
         if not self.direct_damage_profile and not self.indirect_damage_profile:
@@ -689,8 +702,9 @@ class FireMode:
                 shots=-1,
                 control_time=control_time,
                 auto_burst_length=auto_burst_length,
-                recoil_compensation=recoil_compensation,
                 player_state=player_state,
+                recoil_compensation=recoil_compensation,
+                recoil_compensation_accuracy=recoil_compensation_accuracy,
             )
             for _ in range(runs)
         ):
