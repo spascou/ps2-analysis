@@ -718,4 +718,4 @@ class FireMode:
 
                     break
 
-        return int(math.ceil(statistics.median(ttks))) if ttks else -1
+        return int(math.ceil(statistics.mean(ttks))) if ttks else -1
