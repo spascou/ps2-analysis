@@ -100,6 +100,7 @@ class FireTiming:
             first: bool = False
 
             # Spooling weapon
+            # TODO: properly handle manual bursting of spooling weapons
             if (
                 self.spool_up_time
                 and self.spool_up_initial_refire_time
@@ -121,13 +122,14 @@ class FireTiming:
                     first = True
                     burst_fired_shots = 0
 
+                    # Add control time between bursts, except the first
                     if fired_shots > 1:
                         time += control_time
 
                     time += self.refire_time + self.total_delay
 
             # Manually bursting automatic weapon
-            elif auto_burst_length and auto_burst_length > 1 and control_time:
+            elif auto_burst_length and auto_burst_length > 0 and control_time:
 
                 if burst_fired_shots < auto_burst_length - 1:
 
@@ -138,8 +140,10 @@ class FireTiming:
 
                     first = True
                     burst_fired_shots = 0
-                    time += control_time
                     time += self.refire_time + self.total_delay
+
+                    # Add control time between manual bursts
+                    time += control_time
 
             # Semi-automatic or manual action weapon
             elif not self.is_automatic:
