@@ -10,10 +10,11 @@ def planetman_hit_location(
     y: float,
     aim_location: DamageLocation = DamageLocation.TORSO,
     # Planetman dimensions, as three stacked rectangles, in meters
-    width: float = 0.60,
-    head_height: float = 0.33,
-    torso_height: float = 0.65,
-    legs_height: float = 1.40,
+    # Total planetman height: 1.80m
+    width: float = 0.35,
+    head_height: float = 0.25,
+    torso_height: float = 0.60,
+    legs_height: float = 0.95,
 ) -> Optional[DamageLocation]:
 
     hit_location: Optional[DamageLocation] = None
