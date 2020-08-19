@@ -1,6 +1,7 @@
 import decimal
 import functools
 import math
+import timeit
 from typing import (
     Any,
     Callable,
@@ -105,7 +106,7 @@ def float_range_list(
 
     while start_d < stop_d:
 
-        result.append(round(float(start_d), precision_decimals))
+        result.append(fastround(float(start_d), precision_decimals))
 
         start_d += decimal.Decimal(step)
 
@@ -241,3 +242,30 @@ def all_equal(elements: Iterable[Any]) -> bool:
         return True
 
     return all(first == rest for rest in elements_it)
+
+
+class CodeTimer:
+    def __init__(self, name, display_method=print):
+        self.display_method = display_method
+        self.name = name
+
+    def __enter__(self):
+        self.start = timeit.default_timer()
+
+    def __exit__(self, ext_type, exc_value, traceback):
+        self.took = (timeit.default_timer() - self.start) * 1000.0
+        res = "{} took {} ms".format(self.name, self.took)
+        self.display_method(res)
+
+
+@functools.lru_cache
+def tenpow(value: int) -> int:
+
+    return 10 ** value
+
+
+def fastround(value: float, tolerance: int = 0) -> float:
+
+    p: int = tenpow(tolerance)
+
+    return int(value * p + 0.5) / p

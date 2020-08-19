@@ -5,6 +5,8 @@ from typing import Optional, Tuple
 
 import methodtools
 
+from ps2_analysis.utils import fastround
+
 
 @dataclass
 class Recoil:
@@ -79,7 +81,7 @@ class Recoil:
 
     @methodtools.lru_cache()
     def scale_vertical(
-        self, current_min: float, current_max: float
+        self, current_min: float, current_max: float, precision_decimals: int = 6
     ) -> Tuple[float, float]:
 
         new_min: float = current_min
@@ -89,20 +91,26 @@ class Recoil:
 
             if current_min < current_max:
 
-                new_min = current_min + self.vertical_increase
+                new_min = fastround(
+                    current_min + self.vertical_increase, precision_decimals
+                )
                 new_min = min(new_min, current_max)
 
         elif self.vertical_increase < 0:
 
             if current_max > current_min:
 
-                new_max = current_max + self.vertical_increase
+                new_max = fastround(
+                    current_max + self.vertical_increase, precision_decimals
+                )
                 new_max = max(current_min, new_max)
 
         return (new_min, new_max)
 
     @methodtools.lru_cache()
-    def scale_min_horizontal(self, current_min: float, current_max: float) -> float:
+    def scale_min_horizontal(
+        self, current_min: float, current_max: float, precision_decimals: int = 6
+    ) -> float:
 
         new: float
 
@@ -110,7 +118,9 @@ class Recoil:
 
             if current_min > 0:
 
-                new = current_min + self.min_horizontal_increase
+                new = fastround(
+                    current_min + self.min_horizontal_increase, precision_decimals
+                )
 
                 return max(0.0, new)
 
@@ -118,24 +128,32 @@ class Recoil:
 
             if current_min < current_max:
 
-                new = current_min + self.min_horizontal_increase
+                new = fastround(
+                    current_min + self.min_horizontal_increase, precision_decimals
+                )
 
                 return min(new, current_max)
 
         return current_min
 
     @methodtools.lru_cache()
-    def scale_max_horizontal(self, current_min: float, current_max: float) -> float:
+    def scale_max_horizontal(
+        self, current_min: float, current_max: float, precision_decimals: int = 6
+    ) -> float:
 
         new: float
 
         if self.max_horizontal_increase > 0:
 
-            return current_max + self.max_horizontal_increase
+            return fastround(
+                current_max + self.max_horizontal_increase, precision_decimals
+            )
 
         elif self.max_horizontal_increase < 0:
 
-            new = current_max + self.max_horizontal_increase
+            new = fastround(
+                current_max + self.max_horizontal_increase, precision_decimals
+            )
 
             return max(current_min, new)
 
@@ -143,17 +161,30 @@ class Recoil:
 
     @methodtools.lru_cache()
     def scale_horizontal(
-        self, current_min: float, current_max: float
+        self, current_min: float, current_max: float, precision_decimals: int = 6
     ) -> Tuple[float, float]:
 
         return (
-            self.scale_min_horizontal(current_min=current_min, current_max=current_max),
-            self.scale_max_horizontal(current_min=current_min, current_max=current_max),
+            self.scale_min_horizontal(
+                current_min=current_min,
+                current_max=current_max,
+                precision_decimals=precision_decimals,
+            ),
+            self.scale_max_horizontal(
+                current_min=current_min,
+                current_max=current_max,
+                precision_decimals=precision_decimals,
+            ),
         )
 
     @methodtools.lru_cache()
     def recover(
-        self, current_x: float, current_y: float, time: int, moving: bool = False
+        self,
+        current_x: float,
+        current_y: float,
+        time: int,
+        moving: bool = False,
+        precision_decimals: int = 6,
     ) -> Tuple[float, float]:
 
         if self.recovery_rate > 0:
@@ -169,8 +200,14 @@ class Recoil:
 
                 r: float = math.atan(current_x / current_y)
 
-                new_x = current_x - (time * (self.recovery_rate / 1_000) * math.sin(r))
-                new_y = current_y - (time * (self.recovery_rate / 1_000) * math.cos(r))
+                new_x = fastround(
+                    current_x - (time * (self.recovery_rate / 1_000) * math.sin(r)),
+                    precision_decimals,
+                )
+                new_y = fastround(
+                    current_y - (time * (self.recovery_rate / 1_000) * math.cos(r)),
+                    precision_decimals,
+                )
 
                 return (new_x, new_y)
 

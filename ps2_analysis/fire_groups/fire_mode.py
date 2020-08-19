@@ -10,7 +10,7 @@ from ps2_census.enums import FireModeType, PlayerState
 
 from ps2_analysis.enums import DamageLocation, DamageTargetType
 from ps2_analysis.geometry_utils import planetman_hit_location
-from ps2_analysis.utils import float_range, resolve_health_pool
+from ps2_analysis.utils import fastround, float_range, resolve_health_pool
 
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
@@ -203,7 +203,7 @@ class FireMode:
 
                         if r >= step:
 
-                            yield (round(r - step, precision_decimals), stk)
+                            yield (fastround(r - step, precision_decimals), stk)
 
                         else:
 
@@ -295,6 +295,7 @@ class FireMode:
         player_state: PlayerState = PlayerState.STANDING,
         recoil_compensation: bool = False,
         recoil_compensation_accuracy: float = 0.0,
+        precision_decimals: int = 6,
     ) -> Iterator[
         Tuple[
             int,  # time
@@ -329,7 +330,7 @@ class FireMode:
         curr_min_horizontal_recoil: float = self.recoil.min_horizontal
 
         # CoF parameters
-        curr_cof_angle: float = cof.min_cof_angle()
+        curr_cof_angle: float = cof.min_cof_angle(precision_decimals=precision_decimals)
 
         # Loop
         previous_t: int = 0
@@ -340,7 +341,7 @@ class FireMode:
             shots=shots, control_time=control_time, auto_burst_length=auto_burst_length
         ):
 
-            delta = t - previous_t
+            delta: int = t - previous_t
 
             # Scaling and recoveries
             ############################################################################
@@ -356,13 +357,17 @@ class FireMode:
                 # Under recovery delay -- bloom CoF
                 if delta <= cof_recovery_delay:
 
-                    curr_cof_angle = cof.apply_bloom(current=curr_cof_angle)
+                    curr_cof_angle = cof.apply_bloom(
+                        current=curr_cof_angle, precision_decimals=precision_decimals
+                    )
 
                 # Above recovery delay -- recover CoF
                 else:
 
                     curr_cof_angle = cof.recover(
-                        current=curr_cof_angle, time=delta - cof_recovery_delay
+                        current=curr_cof_angle,
+                        time=delta - cof_recovery_delay,
+                        precision_decimals=precision_decimals,
                     )
 
                 # Recoil
@@ -380,6 +385,7 @@ class FireMode:
                     ) = self.recoil.scale_vertical(
                         current_min=curr_min_vertical_recoil,
                         current_max=curr_max_vertical_recoil,
+                        precision_decimals=precision_decimals,
                     )
 
                     # Horizontal
@@ -389,6 +395,7 @@ class FireMode:
                     ) = self.recoil.scale_horizontal(
                         current_min=curr_min_horizontal_recoil,
                         current_max=curr_max_horizontal_recoil,
+                        precision_decimals=precision_decimals,
                     )
 
                 # Above recovery delay and have a recovery rate -- recover recoil
@@ -398,6 +405,7 @@ class FireMode:
                         current_x=curr_x,
                         current_y=curr_y,
                         time=delta - recoil_recovery_delay,
+                        precision_decimals=precision_decimals,
                     )
 
             # Recoil compensation
@@ -411,7 +419,10 @@ class FireMode:
                     if self.recoil.min_angle == self.recoil.max_angle:
                         recenter_a = self.recoil.min_angle
                     else:
-                        recenter_a = (self.recoil.min_angle + self.recoil.max_angle) / 2
+                        recenter_a = fastround(
+                            (self.recoil.min_angle + self.recoil.max_angle) / 2,
+                            precision_decimals,
+                        )
 
                     if recenter_a != 0.0:
                         curr_x -= curr_y / (math.tan(math.radians(90 - recenter_a)))
@@ -422,12 +433,16 @@ class FireMode:
                                 recoil_compensation_accuracy,
                             )
 
+                        curr_x = fastround(curr_x, precision_decimals)
+
                     curr_y = 0.0
 
                     if recoil_compensation_accuracy > 0.0:
                         curr_y += srandom.uniform(
                             -recoil_compensation_accuracy, recoil_compensation_accuracy
                         )
+
+                        curr_y = fastround(curr_y, precision_decimals)
 
             # Current result
             ############################################################################
@@ -460,8 +475,6 @@ class FireMode:
 
             cof_h: float
             cof_v: float
-            cof_angle: float
-            cof_orientation: float
 
             if curr_cof_angle == 0.0:
 
@@ -470,13 +483,18 @@ class FireMode:
 
             else:
 
-                cof_angle = srandom.uniform(0, curr_cof_angle)
-                cof_orientation = srandom.uniform(0, 360)
+                cof_angle: float = srandom.uniform(0, curr_cof_angle)
+
+                cof_orientation: float = srandom.uniform(0, 360)
 
                 cof_orientation_radians: float = math.radians(cof_orientation)
 
-                cof_h = cof_angle * math.cos(cof_orientation_radians)
-                cof_v = cof_angle * math.sin(cof_orientation_radians)
+                cof_h = fastround(
+                    cof_angle * math.cos(cof_orientation_radians), precision_decimals
+                )
+                cof_v = fastround(
+                    cof_angle * math.sin(cof_orientation_radians), precision_decimals
+                )
 
             # Individual pellets position
             for _ in range(
@@ -489,13 +507,11 @@ class FireMode:
 
                 pellet_h: float
                 pellet_v: float
-                pellet_angle: float
-                pellet_orientation: float
 
                 if cof.pellet_spread:
 
-                    pellet_angle = srandom.uniform(0, cof.pellet_spread)
-                    pellet_orientation = srandom.uniform(0, 360)
+                    pellet_angle: float = srandom.uniform(0, cof.pellet_spread)
+                    pellet_orientation: float = srandom.uniform(0, 360)
 
                     pellet_orientation_radians: float = math.radians(pellet_orientation)
 
@@ -503,12 +519,20 @@ class FireMode:
                     pellet_v = pellet_angle * math.sin(pellet_orientation_radians)
 
                     curr_result[2].append(
-                        (curr_x + cof_h + pellet_h, curr_y + cof_v + pellet_v)
+                        (
+                            fastround(curr_x + cof_h + pellet_h, precision_decimals),
+                            fastround(curr_y + cof_v + pellet_v, precision_decimals),
+                        )
                     )
 
                 else:
 
-                    curr_result[2].append((curr_x + cof_h, curr_y + cof_v))
+                    curr_result[2].append(
+                        (
+                            fastround(curr_x + cof_h, precision_decimals),
+                            fastround(curr_y + cof_v, precision_decimals),
+                        )
+                    )
 
             # Recoil simulation
             ############################################################################
@@ -522,14 +546,17 @@ class FireMode:
 
             else:
 
-                recoil_v = srandom.uniform(
-                    curr_min_vertical_recoil, curr_max_vertical_recoil
+                recoil_v = fastround(
+                    srandom.uniform(curr_min_vertical_recoil, curr_max_vertical_recoil),
+                    precision_decimals,
                 )
 
             # FSM scaling of un-angled vertical recoil
             if b is True:
 
-                recoil_v *= self.recoil.first_shot_multiplier
+                recoil_v = fastround(
+                    recoil_v * self.recoil.first_shot_multiplier, precision_decimals
+                )
 
             # Un-angled horizontal recoil amplitude
             recoil_h: float
@@ -540,8 +567,11 @@ class FireMode:
 
             else:
 
-                recoil_h = srandom.uniform(
-                    curr_min_horizontal_recoil, curr_max_horizontal_recoil
+                recoil_h = fastround(
+                    srandom.uniform(
+                        curr_min_horizontal_recoil, curr_max_horizontal_recoil
+                    ),
+                    precision_decimals,
                 )
 
             # Recoil angle
@@ -557,7 +587,10 @@ class FireMode:
 
             else:
 
-                recoil_a = srandom.uniform(self.recoil.min_angle, self.recoil.max_angle)
+                recoil_a = fastround(
+                    srandom.uniform(self.recoil.min_angle, self.recoil.max_angle),
+                    precision_decimals,
+                )
 
             # Horizontal recoil direction
             recoil_h_direction: Literal[-1, 1]
@@ -610,20 +643,22 @@ class FireMode:
                 sin_recoil_a_radians: float = math.sin(recoil_a_radians)
                 cos_recoil_a_radians: float = math.cos(recoil_a_radians)
 
-                recoil_h_angled = (
-                    recoil_h * cos_recoil_a_radians + recoil_v * sin_recoil_a_radians
+                recoil_h_angled = fastround(
+                    recoil_h * cos_recoil_a_radians + recoil_v * sin_recoil_a_radians,
+                    precision_decimals,
                 )
 
-                recoil_v_angled = (
-                    -recoil_h * sin_recoil_a_radians + recoil_v * cos_recoil_a_radians
+                recoil_v_angled = fastround(
+                    -recoil_h * sin_recoil_a_radians + recoil_v * cos_recoil_a_radians,
+                    precision_decimals,
                 )
 
             # Yield
             yield curr_result
 
             # Update current position
-            curr_x += recoil_h_angled
-            curr_y += recoil_v_angled
+            curr_x = curr_x + fastround(recoil_h_angled, precision_decimals)
+            curr_y = curr_y + fastround(recoil_v_angled, precision_decimals)
 
             previous_t = t
 
@@ -633,6 +668,7 @@ class FireMode:
         pellets: List[Tuple[float, float]],
         damage_target_type: DamageTargetType = DamageTargetType.INFANTRY_BASELINE,
         aim_location: DamageLocation = DamageLocation.TORSO,
+        precision_decimals: int = 6,
     ) -> int:
 
         damage: int = 0
@@ -642,8 +678,12 @@ class FireMode:
 
         for pellet_h_angle, pellet_v_angle in pellets:
 
-            pellet_x: float = math.tan(math.radians(pellet_h_angle)) * distance
-            pellet_y: float = math.tan(math.radians(pellet_v_angle)) * distance
+            pellet_x: float = fastround(
+                math.tan(math.radians(pellet_h_angle)) * distance, precision_decimals
+            )
+            pellet_y: float = fastround(
+                math.tan(math.radians(pellet_v_angle)) * distance, precision_decimals
+            )
 
             hit_location: Optional[DamageLocation] = planetman_hit_location(
                 x=pellet_x, y=pellet_y, aim_location=aim_location
@@ -673,6 +713,7 @@ class FireMode:
         player_state: PlayerState = PlayerState.STANDING,
         recoil_compensation: bool = False,
         recoil_compensation_accuracy: float = 0.0,
+        precision_decimals: int = 6,
     ) -> int:
 
         if not self.direct_damage_profile and not self.indirect_damage_profile:
@@ -705,6 +746,7 @@ class FireMode:
                 player_state=player_state,
                 recoil_compensation=recoil_compensation,
                 recoil_compensation_accuracy=recoil_compensation_accuracy,
+                precision_decimals=precision_decimals,
             )
             for _ in range(runs)
         ):
@@ -724,6 +766,7 @@ class FireMode:
                     pellets=pellets_coors,
                     damage_target_type=damage_target_type,
                     aim_location=aim_location,
+                    precision_decimals=precision_decimals,
                 )
 
                 if total_damage >= dtk:

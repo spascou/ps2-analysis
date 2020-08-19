@@ -1,7 +1,6 @@
 import json
 from typing import Dict, FrozenSet, List, Optional, Set
 
-from ps2_analysis.utils import get, optget
 from ps2_census.enums import (
     FireModeType,
     PlayerState,
@@ -9,6 +8,8 @@ from ps2_census.enums import (
     ResistType,
     TargetType,
 )
+
+from ps2_analysis.utils import fastround, get, optget
 
 from .ammo import Ammo
 from .cone_of_fire import ConeOfFire
@@ -122,10 +123,12 @@ def parse_fire_group_data(
                     pellets_count=optget(fm, "fire_pellets_per_shot", int, 1),
                     resist_type=damage_direct_effect["resist_type"],
                     location_multiplier={
-                        DamageLocation.HEAD: 1.0
-                        + optget(fm, "damage_head_multiplier", float, 0.0),
-                        DamageLocation.LEGS: 1.0
-                        + optget(fm, "damage_legs_multiplier", float, 0.0),
+                        DamageLocation.HEAD: fastround(
+                            1.0 + optget(fm, "damage_head_multiplier", float, 0.0), 4
+                        ),
+                        DamageLocation.LEGS: fastround(
+                            1.0 + optget(fm, "damage_legs_multiplier", float, 0.0), 4
+                        ),
                     },
                     effect=damage_direct_effect or {},
                 )

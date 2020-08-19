@@ -9,6 +9,7 @@ from ps2_census.enums import ResistType
 from ps2_analysis.enums import DamageLocation, DamageTargetType
 from ps2_analysis.utils import (
     apply_damage_resistance,
+    fastround,
     float_range,
     locational_linear_falloff,
     resolve_damage_resistance,
@@ -141,7 +142,7 @@ class DamageProfile:
 
                     if r >= step:
 
-                        yield (round(r - step, precision_decimals), stk)
+                        yield (fastround(r - step, precision_decimals), stk)
 
                     else:
 

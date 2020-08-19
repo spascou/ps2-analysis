@@ -5,12 +5,14 @@ from ps2_analysis.utils import (
     all_equal,
     apply_damage_resistance,
     discover,
+    fastround,
     float_range,
     get,
     locational_linear_falloff,
     optget,
     resolve_damage_resistance,
     resolve_health_pool,
+    tenpow,
 )
 
 
@@ -175,3 +177,20 @@ def test_all_equal():
     assert all_equal([1, 2, 3]) is False
     assert all_equal([1, 1]) is True
     assert all_equal([]) is True
+
+
+def test_tenpow():
+    assert tenpow(0) == 10 ** 0
+    assert tenpow(3) == 10 ** 3
+    assert tenpow(5) == 10 ** 5
+
+
+def test_fastround():
+    assert fastround(1.1234543) == 1.0
+    assert fastround(1.1234543, 0) == 1.0
+    assert fastround(1.5, 0) == 2.0
+
+    assert fastround(1.1234543, 2) == 1.12
+    assert fastround(1.1234543, 3) == 1.123
+    assert fastround(1.1234543, 4) == 1.1235
+    assert fastround(1.1234543, 5) == 1.12345
