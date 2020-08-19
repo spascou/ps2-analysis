@@ -9,7 +9,7 @@ import methodtools
 from ps2_census.enums import FireModeType, PlayerState
 
 from ps2_analysis.enums import DamageLocation, DamageTargetType
-from ps2_analysis.geometry_utils import planetman_hit_location
+from ps2_analysis.geometry_utils import planetman_hit_location, random_point_in_disk
 from ps2_analysis.utils import fastround, float_range, resolve_health_pool
 
 from .ammo import Ammo
@@ -483,17 +483,8 @@ class FireMode:
 
             else:
 
-                cof_angle: float = srandom.uniform(0, curr_cof_angle)
-
-                cof_orientation: float = srandom.uniform(0, 360)
-
-                cof_orientation_radians: float = math.radians(cof_orientation)
-
-                cof_h = fastround(
-                    cof_angle * math.cos(cof_orientation_radians), precision_decimals
-                )
-                cof_v = fastround(
-                    cof_angle * math.sin(cof_orientation_radians), precision_decimals
+                cof_h, cof_v = random_point_in_disk(
+                    radius=curr_cof_angle, precision_decimals=precision_decimals
                 )
 
             # Individual pellets position
@@ -510,13 +501,9 @@ class FireMode:
 
                 if cof.pellet_spread:
 
-                    pellet_angle: float = srandom.uniform(0, cof.pellet_spread)
-                    pellet_orientation: float = srandom.uniform(0, 360)
-
-                    pellet_orientation_radians: float = math.radians(pellet_orientation)
-
-                    pellet_h = pellet_angle * math.cos(pellet_orientation_radians)
-                    pellet_v = pellet_angle * math.sin(pellet_orientation_radians)
+                    pellet_h, pellet_v = random_point_in_disk(
+                        radius=cof.pellet_spread, precision_decimals=precision_decimals
+                    )
 
                     curr_result[2].append(
                         (

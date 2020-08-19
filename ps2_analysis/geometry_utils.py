@@ -1,7 +1,11 @@
 import functools
-from typing import Optional
+import math
+import random
+from typing import Optional, Tuple
 
 from ps2_analysis.fire_groups.damage_profile import DamageLocation
+
+from .utils import fastround
 
 
 @functools.lru_cache
@@ -64,3 +68,20 @@ def planetman_hit_location(
             hit_location = DamageLocation.LEGS
 
     return hit_location
+
+
+def random_point_in_disk(
+    radius: float, precision_decimals: int = 6
+) -> Tuple[float, float]:
+
+    srandom = random.SystemRandom()
+
+    cof_h: float = radius
+    cof_v: float = radius
+
+    while math.sqrt(cof_h ** 2 + cof_v ** 2) > radius:
+
+        cof_h = fastround(srandom.uniform(-radius, radius), precision_decimals)
+        cof_v = fastround(srandom.uniform(-radius, radius), precision_decimals)
+
+    return (cof_h, cof_v)
