@@ -11,7 +11,7 @@ from ps2_analysis.weapons.vehicle.data_files import (
 )
 
 SERVICE_ID: Optional[str] = os.environ.get("CENSUS_SERVICE_ID")
-DATAFILES_DIRECTORY: str = "datafiles"
+DATAFILES_DIRECTORY: str = "../datafiles"
 
 if not SERVICE_ID:
     raise ValueError("CENSUS_SERVICE_ID envvar not found")

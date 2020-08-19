@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import altair
 
@@ -18,7 +18,7 @@ from ps2_analysis.weapons.infantry.infantry_weapon import InfantryWeapon
 logging.basicConfig(level=logging.INFO)
 
 SERVICE_ID: Optional[str] = os.environ.get("CENSUS_SERVICE_ID")
-DATAFILES_DIRECTORY: str = "datafiles"
+DATAFILES_DIRECTORY: str = "../datafiles"
 PRECISION_DECIMALS: int = 3
 
 if not SERVICE_ID:
@@ -42,20 +42,11 @@ wp: InfantryWeapon = next(x for x in infantry_weapons if x.item_id == 43)
 
 fm: FireMode = wp.fire_groups[0].fire_modes[1]
 
-sim = fm.simulate_shots(
-    shots=fm.max_consecutive_shots,
-    recoil_compensation=True,
-    recoil_compensation_accuracy=0.1,
-)
+# Simulation without recoil compensation
+sim = fm.simulate_shots(shots=fm.max_consecutive_shots)
 
 datapoints: List[dict] = []
 
-t: int
-cursor_coor: Tuple[float, float]
-pellets_coors: List[Tuple[float, float]]
-_cof: float
-_vertical_recoil: Tuple[float, float]
-_horizontal_recoil: Tuple[float, float]
 for t, cursor_coor, pellets_coors, _cof, _vertical_recoil, _horizontal_recoil in sim:
     cursor_x, cursor_y = cursor_coor
 
@@ -71,7 +62,6 @@ for t, cursor_coor, pellets_coors, _cof, _vertical_recoil, _horizontal_recoil in
 
         datapoints.append({"time": t, "type": "pellet", "x": pellet_x, "y": pellet_y})
 
-
 dataset = altair.Data(values=datapoints)
 
 chart = (
@@ -83,8 +73,56 @@ chart = (
         color=altair.Color("type:O", scale=altair.Scale(scheme="dark2")),
         tooltip=["time:Q", "x:Q", "y:Q"],
     )
-    .properties(height=900, width=900)
+    .properties(title="without recoil control", height=900, width=900)
     .interactive()
 )
 
-chart.save("shooting_simulation_compensated.html")
+# Simulation with recoil compensation
+compensated_sim = fm.simulate_shots(
+    shots=fm.max_consecutive_shots, recoil_compensation=True,
+)
+
+compensated_datapoints: List[dict] = []
+
+for (
+    t,
+    cursor_coor,
+    pellets_coors,
+    _cof,
+    _vertical_recoil,
+    _horizontal_recoil,
+) in compensated_sim:
+    cursor_x, cursor_y = cursor_coor
+
+    cursor_x = fastround(cursor_x, PRECISION_DECIMALS)
+    cursor_y = fastround(cursor_y, PRECISION_DECIMALS)
+
+    compensated_datapoints.append(
+        {"time": t, "type": "cursor", "x": cursor_x, "y": cursor_y}
+    )
+
+    for pellet_x, pellet_y in pellets_coors:
+
+        pellet_x = fastround(pellet_x, PRECISION_DECIMALS)
+        pellet_y = fastround(pellet_y, PRECISION_DECIMALS)
+
+        compensated_datapoints.append(
+            {"time": t, "type": "pellet", "x": pellet_x, "y": pellet_y}
+        )
+
+compensated_dataset = altair.Data(values=compensated_datapoints)
+
+compensated_chart = (
+    altair.Chart(compensated_dataset)
+    .mark_point()
+    .encode(
+        x="x:Q",
+        y="y:Q",
+        color=altair.Color("type:O", scale=altair.Scale(scheme="dark2")),
+        tooltip=["time:Q", "x:Q", "y:Q"],
+    )
+    .properties(title="with recoil control", height=900, width=900)
+    .interactive()
+)
+
+(chart & compensated_chart).save("shooting_simulation.html")

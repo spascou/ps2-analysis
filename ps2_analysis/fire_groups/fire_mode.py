@@ -701,11 +701,11 @@ class FireMode:
         recoil_compensation: bool = False,
         recoil_compensation_accuracy: float = 0.0,
         precision_decimals: int = 6,
-    ) -> int:
+    ) -> Tuple[int, float]:
 
         if not self.direct_damage_profile and not self.indirect_damage_profile:
 
-            return -1
+            return (-1, 1.0)
 
         ttks: List[int] = []
 
@@ -713,7 +713,9 @@ class FireMode:
 
         if dtk == -1:
 
-            return -1
+            return (-1, 1.0)
+
+        timed_out_simulations: int = 0
 
         simulation: Iterator[
             Tuple[
@@ -746,6 +748,8 @@ class FireMode:
 
                 if t > max_time:
 
+                    timed_out_simulations += 1
+
                     break
 
                 total_damage += self.damage_inflicted_by_pellets(
@@ -762,4 +766,8 @@ class FireMode:
 
                     break
 
-        return int(math.ceil(statistics.mean(ttks))) if ttks else -1
+        return (
+            (int(math.ceil(statistics.mean(ttks))), (timed_out_simulations / runs))
+            if ttks
+            else (-1, 1.0)
+        )

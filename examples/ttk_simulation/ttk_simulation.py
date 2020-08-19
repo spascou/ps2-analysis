@@ -9,6 +9,7 @@ from ps2_analysis.fire_groups.data_files import (
     update_data_files as update_fire_groups_data_files,
 )
 from ps2_analysis.fire_groups.fire_mode import FireMode
+from ps2_analysis.utils import CodeTimer
 from ps2_analysis.weapons.infantry.data_files import (
     update_data_files as update_infantry_weapons_data_files,
 )
@@ -18,7 +19,7 @@ from ps2_analysis.weapons.infantry.infantry_weapon import InfantryWeapon
 logging.basicConfig(level=logging.INFO)
 
 SERVICE_ID: Optional[str] = os.environ.get("CENSUS_SERVICE_ID")
-DATAFILES_DIRECTORY: str = "datafiles"
+DATAFILES_DIRECTORY: str = "../datafiles"
 
 if not SERVICE_ID:
     raise ValueError("CENSUS_SERVICE_ID envvar not found")
@@ -41,49 +42,57 @@ wp: InfantryWeapon = next(x for x in infantry_weapons if x.item_id == 43)
 
 fm: FireMode = wp.fire_groups[0].fire_modes[1]
 
+distance_range: List[int] = list(range(0, 60, 2))
+
 rttks: List[dict] = []
 
-distance: int = 50
+distance: int
+for distance in distance_range:
 
-
-burst_length: int
-for burst_length in range(1, 16, 1):
-
-    control_time: int
-    for control_time in range(0, 350, 20):
-
-        ttk: int = fm.real_time_to_kill(
+    with CodeTimer(f"simulation for distance {distance}"):
+        auto_ttk, auto_timeout_ratio = fm.real_time_to_kill(
             distance=distance,
-            runs=500,
-            control_time=control_time,
-            auto_burst_length=burst_length,
-            aim_location=DamageLocation.HEAD,
+            runs=750,
             recoil_compensation=True,
-            recoil_compensation_accuracy=0.1,
+            aim_location=DamageLocation.HEAD,
         )
 
-        rttks.append(
-            {"control_time": control_time, "burst_length": burst_length, "ttk": ttk}
+        burst_5_20_ttk, burst_5_20_timeout_ratio = fm.real_time_to_kill(
+            distance=distance,
+            runs=750,
+            control_time=10,
+            auto_burst_length=5,
+            recoil_compensation=True,
+            aim_location=DamageLocation.HEAD,
         )
+
+        if auto_timeout_ratio < 0.2:
+            rttks.append(
+                {"distance": distance, "control": "full auto", "ttk": auto_ttk}
+            )
+
+        if burst_5_20_timeout_ratio < 0.2:
+            rttks.append(
+                {
+                    "distance": distance,
+                    "control": f"3 burst + {fm.fire_timing.refire_time + 20}ms",
+                    "ttk": burst_5_20_ttk,
+                }
+            )
 
 dataset = altair.Data(values=rttks)
 
 chart = (
     altair.Chart(dataset)
-    .mark_rect()
+    .mark_line()
     .encode(
-        x="burst_length:O",
-        y=altair.Y(
-            "control_time:O",
-            sort=altair.EncodingSortField("control_time", order="descending"),
-        ),
-        color=altair.Color(
-            "ttk:Q", scale=altair.Scale(scheme="plasma"), sort="descending"
-        ),
-        tooltip=["ttk:Q"],
+        x="distance:Q",
+        y="ttk:Q",
+        color=altair.Color("control:O", scale=altair.Scale(scheme="dark2")),
+        tooltip=["control:O"],
     )
-    .properties(height=900, width=900)
+    .properties(title="TTK by range", height=900, width=900)
     .interactive()
 )
 
-chart.save("optimal_bursting.html")
+chart.save("ttk_simulation.html")

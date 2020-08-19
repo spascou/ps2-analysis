@@ -601,14 +601,14 @@ def test_real_time_to_kill():
         player_state_cone_of_fire={PlayerState.STANDING: cof},
     )
 
-    assert fm.real_time_to_kill(distance=1.0, runs=10) == 0
+    assert fm.real_time_to_kill(distance=1.0, runs=10)[0] == 0
 
-    assert fm.real_time_to_kill(distance=10.0, runs=10) == 0
+    assert fm.real_time_to_kill(distance=10.0, runs=10)[0] == 0
 
-    assert fm.real_time_to_kill(distance=11.0, runs=10) == 100
+    assert fm.real_time_to_kill(distance=11.0, runs=10)[0] == 100
 
-    assert fm.real_time_to_kill(distance=15.0, runs=10) == 100
+    assert fm.real_time_to_kill(distance=15.0, runs=10)[0] == 100
 
-    assert fm.real_time_to_kill(distance=16.0, runs=10) == 200
+    assert fm.real_time_to_kill(distance=16.0, runs=10)[0] == 200
 
-    assert fm.real_time_to_kill(distance=20.0, runs=10) == -1
+    assert fm.real_time_to_kill(distance=20.0, runs=10)[0] == -1

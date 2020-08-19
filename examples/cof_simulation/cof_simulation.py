@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import altair
 
@@ -17,7 +17,7 @@ from ps2_analysis.weapons.infantry.infantry_weapon import InfantryWeapon
 logging.basicConfig(level=logging.INFO)
 
 SERVICE_ID: Optional[str] = os.environ.get("CENSUS_SERVICE_ID")
-DATAFILES_DIRECTORY: str = "datafiles"
+DATAFILES_DIRECTORY: str = "../datafiles"
 
 if not SERVICE_ID:
     raise ValueError("CENSUS_SERVICE_ID envvar not found")
@@ -44,13 +44,6 @@ datapoints: List[dict] = []
 
 auto_sim = fm.simulate_shots(shots=fm.max_consecutive_shots)
 
-t: int
-_cursor_coor: Tuple[float, float]
-_pellets_coors: List[Tuple[float, float]]
-cof: float
-_vertical_recoil: Tuple[float, float]
-_horizontal_recoil: Tuple[float, float]
-
 for (
     t,
     _cursor_coor,
@@ -59,10 +52,10 @@ for (
     _vertical_recoil,
     _horizontal_recoil,
 ) in auto_sim:
-    datapoints.append({"time": t, "control": "auto", "cof": cof})
+    datapoints.append({"time": t, "control": "full auto", "cof": cof})
 
-burst_5_100_sim = fm.simulate_shots(
-    shots=fm.max_consecutive_shots, auto_burst_length=5, control_time=100
+burst_sim = fm.simulate_shots(
+    shots=fm.max_consecutive_shots, auto_burst_length=5, control_time=5,
 )
 
 for (
@@ -72,8 +65,14 @@ for (
     cof,
     _vertical_recoil,
     _horizontal_recoil,
-) in burst_5_100_sim:
-    datapoints.append({"time": t, "control": "5+100ms", "cof": cof})
+) in burst_sim:
+    datapoints.append(
+        {
+            "time": t,
+            "control": f"5 burst + {fm.fire_timing.refire_time + 5}ms",
+            "cof": cof,
+        }
+    )
 
 
 dataset = altair.Data(values=datapoints)
@@ -87,7 +86,7 @@ chart = (
         color=altair.Color("control:O", scale=altair.Scale(scheme="dark2")),
         tooltip=["time:Q", "control:O"],
     )
-    .properties(height=900, width=900)
+    .properties(title="Cone of Fire", height=900, width=900)
     .interactive()
 )
 
