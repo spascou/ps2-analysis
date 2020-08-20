@@ -767,7 +767,16 @@ class FireMode:
                     break
 
         return (
-            (int(math.ceil(statistics.mean(ttks))), (timed_out_simulations / runs))
+            (
+                int(
+                    math.ceil(
+                        statistics.mean(
+                            statistics.quantiles(ttks, n=20, method="inclusive")[1:-1]
+                        )
+                    )
+                ),
+                (timed_out_simulations / runs),
+            )
             if ttks
             else (-1, 1.0)
         )
