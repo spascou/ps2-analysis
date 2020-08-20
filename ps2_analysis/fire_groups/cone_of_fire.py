@@ -78,3 +78,24 @@ class ConeOfFire:
             return max(new, self.min_cof_angle(moving=moving))
 
         return current
+
+    @methodtools.lru_cache()
+    def recover_time(self, current: float, precision_decimals: int = 6):
+
+        if self.recovery_rate <= 0:
+
+            return -1
+
+        return int(round(current / (self.recovery_rate / 1_000)))
+
+    @methodtools.lru_cache()
+    def max_recover_time(
+        self, moving: bool = False, precision_decimals: int = 6
+    ) -> int:
+
+        return self.recover_time(
+            current=self.max_cof_angle(
+                moving=moving, precision_decimals=precision_decimals
+            ),
+            precision_decimals=precision_decimals,
+        )

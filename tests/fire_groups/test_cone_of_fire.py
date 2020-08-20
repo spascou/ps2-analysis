@@ -82,3 +82,47 @@ def test_recover():
     )
 
     assert cof.recover(current=2.0, time=1000) == 2.0
+
+
+def test_recover_time():
+    cof: ConeOfFire = ConeOfFire(
+        max_angle=2.0,
+        min_angle=1.0,
+        bloom=0.1,
+        recovery_rate=10.0,
+        recovery_delay=100,
+        multiplier=1.0,
+        moving_multiplier=2.0,
+        pellet_spread=0.0,
+    )
+
+    assert cof.recover_time(current=2.0) == 200
+
+    cof: ConeOfFire = ConeOfFire(
+        max_angle=2.0,
+        min_angle=1.0,
+        bloom=0.1,
+        recovery_rate=0.0,
+        recovery_delay=100,
+        multiplier=1.0,
+        moving_multiplier=2.0,
+        pellet_spread=0.0,
+    )
+
+    assert cof.recover_time(current=2.0) == -1
+
+
+def test_max_recover_time():
+    cof: ConeOfFire = ConeOfFire(
+        max_angle=2.0,
+        min_angle=1.0,
+        bloom=0.1,
+        recovery_rate=10.0,
+        recovery_delay=100,
+        multiplier=2.0,
+        moving_multiplier=2.0,
+        pellet_spread=0.0,
+    )
+
+    assert cof.max_recover_time(moving=False) == 400
+    assert cof.max_recover_time(moving=True) == 800
