@@ -1,12 +1,13 @@
 import logging
 import os
-import statistics
 from itertools import groupby
 from typing import List, Optional
 
 import altair
+from ps2_census.enums import PlayerState
 
 from ps2_analysis.enums import DamageLocation
+from ps2_analysis.fire_groups.cone_of_fire import ConeOfFire
 from ps2_analysis.fire_groups.data_files import (
     update_data_files as update_fire_groups_data_files,
 )
@@ -44,69 +45,87 @@ wp: InfantryWeapon = next(x for x in infantry_weapons if x.item_id == 43)
 
 fm: FireMode = wp.fire_groups[0].fire_modes[1]
 
+cof: ConeOfFire = fm.player_state_cone_of_fire[PlayerState.STANDING]
+
 rttks: List[dict] = []
 
 distance: int
-for distance in range(0, 100, 5):
+for distance in range(0, 100, 2):
 
     with CodeTimer(f"determination at {distance}m"):
 
         burst_length: int
-        for burst_length in range(1, 11):
+        for burst_length in range(0, int(round(fm.max_consecutive_shots / 4)) + 1, 1):
 
-            control_time: int
-            for control_time in range(
-                0, 300, int(round(fm.fire_timing.refire_time / 2))
-            ):
+            control_time: int = cof.recover_time(
+                cof.min_cof_angle() + cof.bloom * burst_length
+            )
 
-                ttk: int
-                timed_out_ratio: float
+            ttk: int
+            timed_out_ratio: float
 
-                ttk, timed_out_ratio = fm.real_time_to_kill(
-                    distance=distance,
-                    runs=200,
-                    max_time=3_000,
-                    control_time=control_time,
-                    auto_burst_length=burst_length,
-                    aim_location=DamageLocation.HEAD,
-                    recoil_compensation=True,
-                )
+            ttk, timed_out_ratio = fm.real_time_to_kill(
+                distance=distance,
+                runs=500,
+                control_time=control_time,
+                auto_burst_length=burst_length,
+                aim_location=DamageLocation.HEAD,
+                recoil_compensation=True,
+            )
 
-                rttks.append(
-                    {
-                        "distance": distance,
-                        "control_time": control_time + fm.fire_timing.refire_time,
-                        "burst_length": burst_length,
-                        "ttk": ttk if timed_out_ratio < 0.20 else -1,
-                        "timed_out_ratio": timed_out_ratio,
-                    }
-                )
+            rttks.append(
+                {
+                    "distance": distance,
+                    "control_time": control_time + fm.fire_timing.refire_time,
+                    "burst_length": burst_length,
+                    "ttk": ttk if timed_out_ratio < 0.20 else -1,
+                    "timed_out_ratio": timed_out_ratio,
+                }
+            )
 
 filtered_rttks: List[dict] = []
 
-for distance, distance_rttks_it in groupby(
+for _, distance_rttks_it in groupby(
     sorted(rttks, key=lambda x: x["distance"]), lambda x: x["distance"]
 ):
-    els: List[dict] = list(filter(lambda x: x["ttk"] >= 0, distance_rttks_it))
+    distance_rttks: List[dict] = list(distance_rttks_it)
 
-    min_ttk: int = min((x["ttk"] for x in els))
-    median_ttk: int = statistics.median((x["ttk"] for x in els))
+    min_ttk: int = min(
+        (x["ttk"] for x in filter(lambda x: x["ttk"] >= 0, distance_rttks))
+    )
 
-    if abs(min_ttk - median_ttk) / min_ttk < 0.2:
+    candidates: List[dict] = list(
+        filter(lambda x: x["ttk"] <= round(1.05 * min_ttk), distance_rttks)
+    )
 
-        filtered_rttks.append(
-            {
-                "distance": distance,
-                "control_time": 0,
-                "burst_length": -1,
-                "ttk": min_ttk,
-                "timed_out_ratio": 0.0,
-            }
-        )
+    auto_candidates: List[dict] = list(
+        filter(lambda x: x["burst_length"] == 0, candidates)
+    )
+
+    if auto_candidates:
+
+        filtered_rttks.append(min(auto_candidates, key=lambda x: x["ttk"]))
 
     else:
 
-        filtered_rttks.append(min(els, key=lambda x: x["ttk"]))
+        max_burst_length: int = max(c["burst_length"] for c in candidates)
+
+        filtered_rttks.append(
+            min(
+                filter(lambda x: x["burst_length"] == max_burst_length, candidates),
+                key=lambda x: x["ttk"],
+            )
+        )
+
+derivative_filtered_rttks: List[dict] = []
+
+for i in range(1, len(filtered_rttks)):
+    pv = filtered_rttks[i - 1]
+    v = filtered_rttks[i]
+
+    derivative_filtered_rttks.append(
+        {"distance": v["distance"], "ttk": v["ttk"] - pv["ttk"]}
+    )
 
 dataset = altair.Data(values=filtered_rttks)
 
@@ -118,7 +137,7 @@ burst_length_chart = (
         y="burst_length:Q",
         tooltip=["ttk:Q", "distance:Q", "burst_length:Q", "control_time:Q"],
     )
-    .properties(title="Optimal burst length at distance", width=900)
+    .properties(title=f"{wp.name} optimal burst length at distance", width=900)
     .interactive()
 )
 control_time_chart = (
@@ -129,7 +148,7 @@ control_time_chart = (
         y="control_time:Q",
         tooltip=["ttk:Q", "distance:Q", "burst_length:Q", "control_time:Q"],
     )
-    .properties(title="Optimal control time at distance", width=900)
+    .properties(title=f"{wp.name} optimal control time at distance", width=900)
     .interactive()
 )
 ttk_chart = (
@@ -140,10 +159,20 @@ ttk_chart = (
         y="ttk:Q",
         tooltip=["ttk:Q", "distance:Q", "burst_length:Q", "control_time:Q"],
     )
-    .properties(title="Optimal TTK at distance", width=900)
+    .properties(title=f"{wp.name} optimal TTK at distance", width=900)
     .interactive()
 )
 
-(burst_length_chart & control_time_chart & ttk_chart).save(
+derivative_dataset = altair.Data(values=derivative_filtered_rttks)
+
+ttk_derivative_chart = (
+    altair.Chart(derivative_dataset)
+    .mark_line()
+    .encode(x="distance:Q", y="ttk:Q", tooltip=["ttk:Q", "distance:Q"],)
+    .properties(title=f"{wp.name} derivative optimal TTK at distance", width=900)
+    .interactive()
+)
+
+(burst_length_chart & control_time_chart & ttk_chart & ttk_derivative_chart).save(
     "optimal_burst_by_range.html"
 )

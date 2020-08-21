@@ -3,8 +3,6 @@ from typing import Optional
 
 import methodtools
 
-from ps2_analysis.utils import fastround
-
 
 @dataclass
 class ConeOfFire:
@@ -19,7 +17,7 @@ class ConeOfFire:
     grow_rate: Optional[float] = None
 
     @methodtools.lru_cache()
-    def min_cof_angle(self, moving: bool = False, precision_decimals: int = 6) -> float:
+    def min_cof_angle(self, moving: bool = False) -> float:
 
         result: float = self.min_angle * self.multiplier
 
@@ -27,10 +25,10 @@ class ConeOfFire:
 
             result *= self.moving_multiplier
 
-        return fastround(result, precision_decimals)
+        return result
 
     @methodtools.lru_cache()
-    def max_cof_angle(self, moving: bool = False, precision_decimals: int = 6) -> float:
+    def max_cof_angle(self, moving: bool = False) -> float:
 
         result: float = self.max_angle * self.multiplier
 
@@ -38,49 +36,32 @@ class ConeOfFire:
 
             result *= self.moving_multiplier
 
-        return fastround(result, precision_decimals)
+        return result
 
     @methodtools.lru_cache()
-    def apply_bloom(
-        self, current: float, moving: bool = False, precision_decimals: int = 6
-    ) -> float:
+    def apply_bloom(self, current: float, moving: bool = False) -> float:
 
-        if current < self.max_cof_angle(
-            moving=moving, precision_decimals=precision_decimals
-        ):
+        if current < self.max_cof_angle(moving=moving):
 
-            new: float = fastround(current + self.bloom, precision_decimals)
+            new: float = current + self.bloom
 
-            return min(
-                new,
-                self.max_cof_angle(
-                    moving=moving, precision_decimals=precision_decimals
-                ),
-            )
+            return min(new, self.max_cof_angle(moving=moving))
 
         return self.max_cof_angle(moving=moving)
 
     @methodtools.lru_cache()
-    def recover(
-        self,
-        current: float,
-        time: int,
-        moving: bool = False,
-        precision_decimals: int = 6,
-    ) -> float:
+    def recover(self, current: float, time: int, moving: bool = False) -> float:
 
         if self.recovery_rate > 0:
 
-            new: float = fastround(
-                current - (self.recovery_rate / 1_000) * time, precision_decimals
-            )
+            new: float = current - (self.recovery_rate / 1_000) * time
 
             return max(new, self.min_cof_angle(moving=moving))
 
         return current
 
     @methodtools.lru_cache()
-    def recover_time(self, current: float, precision_decimals: int = 6):
+    def recover_time(self, current: float):
 
         if self.recovery_rate <= 0:
 
@@ -89,13 +70,6 @@ class ConeOfFire:
         return int(round(current / (self.recovery_rate / 1_000)))
 
     @methodtools.lru_cache()
-    def max_recover_time(
-        self, moving: bool = False, precision_decimals: int = 6
-    ) -> int:
+    def max_recover_time(self, moving: bool = False) -> int:
 
-        return self.recover_time(
-            current=self.max_cof_angle(
-                moving=moving, precision_decimals=precision_decimals
-            ),
-            precision_decimals=precision_decimals,
-        )
+        return self.recover_time(current=self.max_cof_angle(moving=moving))

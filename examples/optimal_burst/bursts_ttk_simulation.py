@@ -3,8 +3,10 @@ import os
 from typing import List, Optional
 
 import altair
+from ps2_census.enums import PlayerState
 
 from ps2_analysis.enums import DamageLocation
+from ps2_analysis.fire_groups.cone_of_fire import ConeOfFire
 from ps2_analysis.fire_groups.data_files import (
     update_data_files as update_fire_groups_data_files,
 )
@@ -42,16 +44,18 @@ wp: InfantryWeapon = next(x for x in infantry_weapons if x.item_id == 43)
 
 fm: FireMode = wp.fire_groups[0].fire_modes[1]
 
+cof: ConeOfFire = fm.player_state_cone_of_fire[PlayerState.STANDING]
+
 rttks: List[dict] = []
 
-distance: int = 80
+distance: int = 30
 
 burst_length: int
-for burst_length in range(1, int(round(fm.max_consecutive_shots / 2)) + 1):
+for burst_length in range(0, int(round(fm.max_consecutive_shots / 4)) + 1, 1):
 
     control_time: int
     for control_time in range(
-        0, 4 * fm.fire_timing.refire_time, int(round(fm.fire_timing.refire_time / 2))
+        0, cof.recover_time(cof.min_cof_angle() + cof.bloom * burst_length * 2) + 10, 10
     ):
 
         with CodeTimer(
@@ -66,7 +70,7 @@ for burst_length in range(1, int(round(fm.max_consecutive_shots / 2)) + 1):
                 runs=500,
                 control_time=control_time,
                 auto_burst_length=burst_length,
-                aim_location=DamageLocation.HEAD,
+                aim_location=DamageLocation.TORSO,
                 recoil_compensation=True,
             )
 
@@ -96,7 +100,11 @@ chart = (
         ),
         tooltip=["ttk:Q", "timed_out_ratio:Q"],
     )
-    .properties(title="TTK by burst length and control time", height=900, width=900)
+    .properties(
+        title=f"{wp.name} TTK by burst length and control time at {distance}m",
+        height=900,
+        width=900,
+    )
     .interactive()
 )
 

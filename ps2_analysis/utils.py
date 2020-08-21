@@ -269,3 +269,9 @@ def fastround(value: float, tolerance: int = 0) -> float:
     p: int = tenpow(tolerance)
 
     return int(value * p + 0.5) / p
+
+
+@functools.lru_cache
+def cached_tan(angle) -> float:
+
+    return math.tan(angle)
