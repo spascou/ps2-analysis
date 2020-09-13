@@ -71,6 +71,7 @@ for distance in range(0, 100, 2):
                 auto_burst_length=burst_length,
                 aim_location=DamageLocation.HEAD,
                 recoil_compensation=True,
+                # recoil_compensation_accuracy=0.1,
             )
 
             rttks.append(
@@ -78,10 +79,54 @@ for distance in range(0, 100, 2):
                     "distance": distance,
                     "control_time": control_time + fm.fire_timing.refire_time,
                     "burst_length": burst_length,
-                    "ttk": ttk if timed_out_ratio < 0.20 else -1,
+                    "ttk": ttk,
                     "timed_out_ratio": timed_out_ratio,
                 }
             )
+
+
+dataset = altair.Data(values=rttks)
+
+dst_ttk_chart = (
+    altair.Chart(dataset)
+    .mark_line()
+    .encode(
+        x="distance:Q",
+        y="ttk:Q",
+        color=altair.Color("burst_length:O", scale=altair.Scale(scheme="dark2")),
+        tooltip=[
+            "distance:Q",
+            "control_time:Q",
+            "burst_length:Q",
+            "ttk:Q",
+            "timed_out_ratio:Q",
+        ],
+    )
+    .properties(title=f"{wp.name} optimal ttk at distance by burst length", width=900)
+    .interactive()
+)
+
+dst_tor_chart = (
+    altair.Chart(dataset)
+    .mark_line()
+    .encode(
+        x="distance:Q",
+        y="timed_out_ratio:Q",
+        color=altair.Color("burst_length:O", scale=altair.Scale(scheme="dark2")),
+        tooltip=[
+            "distance:Q",
+            "control_time:Q",
+            "burst_length:Q",
+            "ttk:Q",
+            "timed_out_ratio:Q",
+        ],
+    )
+    .properties(
+        title=f"{wp.name} timed out ratio at distance by burst length", width=900
+    )
+    .interactive()
+)
+
 
 filtered_rttks: List[dict] = []
 
@@ -91,11 +136,11 @@ for _, distance_rttks_it in groupby(
     distance_rttks: List[dict] = list(distance_rttks_it)
 
     min_ttk: int = min(
-        (x["ttk"] for x in filter(lambda x: x["ttk"] >= 0, distance_rttks))
+        (x["ttk"] for x in filter(lambda x: x["ttk"] > 0, distance_rttks))
     )
 
     candidates: List[dict] = list(
-        filter(lambda x: x["ttk"] <= round(1.05 * min_ttk), distance_rttks)
+        filter(lambda x: 0 <= x["ttk"] <= round(1.05 * min_ttk), distance_rttks)
     )
 
     auto_candidates: List[dict] = list(
@@ -108,29 +153,12 @@ for _, distance_rttks_it in groupby(
 
     else:
 
-        max_burst_length: int = max(c["burst_length"] for c in candidates)
+        filtered_rttks.append(min(candidates, key=lambda x: x["ttk"],))
 
-        filtered_rttks.append(
-            min(
-                filter(lambda x: x["burst_length"] == max_burst_length, candidates),
-                key=lambda x: x["ttk"],
-            )
-        )
-
-derivative_filtered_rttks: List[dict] = []
-
-for i in range(1, len(filtered_rttks)):
-    pv = filtered_rttks[i - 1]
-    v = filtered_rttks[i]
-
-    derivative_filtered_rttks.append(
-        {"distance": v["distance"], "ttk": v["ttk"] - pv["ttk"]}
-    )
-
-dataset = altair.Data(values=filtered_rttks)
+filtered_dataset = altair.Data(values=filtered_rttks)
 
 burst_length_chart = (
-    altair.Chart(dataset)
+    altair.Chart(filtered_dataset)
     .mark_line()
     .encode(
         x="distance:Q",
@@ -140,39 +168,5 @@ burst_length_chart = (
     .properties(title=f"{wp.name} optimal burst length at distance", width=900)
     .interactive()
 )
-control_time_chart = (
-    altair.Chart(dataset)
-    .mark_line()
-    .encode(
-        x="distance:Q",
-        y="control_time:Q",
-        tooltip=["ttk:Q", "distance:Q", "burst_length:Q", "control_time:Q"],
-    )
-    .properties(title=f"{wp.name} optimal control time at distance", width=900)
-    .interactive()
-)
-ttk_chart = (
-    altair.Chart(dataset)
-    .mark_line()
-    .encode(
-        x="distance:Q",
-        y="ttk:Q",
-        tooltip=["ttk:Q", "distance:Q", "burst_length:Q", "control_time:Q"],
-    )
-    .properties(title=f"{wp.name} optimal TTK at distance", width=900)
-    .interactive()
-)
 
-derivative_dataset = altair.Data(values=derivative_filtered_rttks)
-
-ttk_derivative_chart = (
-    altair.Chart(derivative_dataset)
-    .mark_line()
-    .encode(x="distance:Q", y="ttk:Q", tooltip=["ttk:Q", "distance:Q"],)
-    .properties(title=f"{wp.name} derivative optimal TTK at distance", width=900)
-    .interactive()
-)
-
-(burst_length_chart & control_time_chart & ttk_chart & ttk_derivative_chart).save(
-    "optimal_burst_by_range.html"
-)
+(dst_ttk_chart & dst_tor_chart & burst_length_chart).save("optimal_burst_by_range.html")
