@@ -43,6 +43,7 @@ FIRE_GROUP_DATA_FIXERS: Dict[int, Callable[[dict], None]] = {
     21501: ns_11_second_fire_group,
     70015: ns_11_second_fire_group,
     80592: ns_11_second_fire_group,
+    80704: ns_11_second_fire_group,
     11: beamer_vs3_first_fire_group,
     766: beamer_vs3_first_fire_group,
     7403: beamer_vs3_first_fire_group,
